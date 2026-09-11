@@ -4,7 +4,7 @@ A personal & local tool for managing resume components as a reusable database, t
 
 ## Overview
 
-Resume content is built as components (Experience, Projects, Leadership) with their own category, and are built into resumes dynamically and saved as resume presets, which are saved selections and ordering of components and bullets.
+ResumeBank stores reusable resume components (Experience, Projects, Leadership), and dynamically assembles them into resumes. Each tailored resume is saved as a preset, which is a specific selection and ordering of components.
 
 ## Tech Stack
 
@@ -16,7 +16,7 @@ Database: SQLite
 
 Foundations
 
-- [ ] Set up venv
+- [x] Set up venv
 - [ ] Build Django App
 - [ ] Define database schema and models
 - [ ] Set up SQlite and some test data
