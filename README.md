@@ -14,6 +14,19 @@ Database: SQLite
 
 PDF: Jinja2 renders a `.tex` template, compiled with `pdflatex` (requires a TeX distribution such as MiKTeX or TeX Live on PATH)
 
+## Setup
+
+```
+python -m venv .venv
+.venv\Scripts\activate        # source .venv/bin/activate on macOS/Linux
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed           # loads test data; safe to re-run, wipes and reloads
+python manage.py runserver
+```
+
+`seed` fills the bank with a sample profile, education, components with bullets, skills, and three presets (`General`, `Backend Internship`, `ML Research`). Run `python manage.py createsuperuser` to browse it all in `/admin`.
+
 ## Roadmap
 
 <details>
@@ -29,7 +42,7 @@ PDF: Jinja2 renders a `.tex` template, compiled with `pdflatex` (requires a TeX 
   - [x] Skill
   - [x] ResumePreset + PresetComponent / PresetBullet / PresetSkill
   - [x] Resume (compile history)
-- [ ] Set up SQLite and some test data
+- [x] Set up SQLite and some test data
 - Set up pages
   - [ ] Component manager (Components, Skills, Education, Profile)
   - [ ] Resume Builder (includes clone-preset button)
