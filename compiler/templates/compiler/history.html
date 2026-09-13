@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}History{% endblock %}
+
+{% block content %}
+<h1>Compile history{% if preset %} &middot; {{ preset.name }}{% endif %}</h1>
+{% if preset %}<p><a href="{% url 'presets:workspace' preset.pk %}">&larr; Back to workspace</a> &middot; <a href="{% url 'compiler:history' %}">All presets</a></p>{% endif %}
+
+{% if resumes %}
+<table>
+    <thead>
+        <tr><th>Preset</th><th>Compiled</th><th>Pages</th><th>Files</th></tr>
+    </thead>
+    <tbody>
+    {% for r in resumes %}
+        <tr>
+            <td>
+                {% if r.preset %}<a href="{% url 'presets:workspace' r.preset.pk %}">{{ r.preset_name }}</a>
+                {% else %}{{ r.preset_name }} <small>(deleted)</small>{% endif %}
+            </td>
+            <td>{{ r.generated_at|date:"M j, Y H:i" }}</td>
+            <td>{% if r.over_limit %}<span class="badge over">{{ r.page_count }} &middot; over limit</span>{% else %}{{ r.page_count }}{% endif %}</td>
+            <td>
+                {% if r.pdf_file %}<a href="{{ r.pdf_file.url }}" target="_blank">PDF</a>{% endif %}
+                {% if r.tex_file %}&middot; <a href="{{ r.tex_file.url }}" target="_blank">.tex</a>{% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Nothing compiled yet. Open a preset and click <em>Save to history</em>.</p>
+{% endif %}
+{% endblock %}

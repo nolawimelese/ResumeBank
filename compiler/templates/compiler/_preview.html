@@ -1,0 +1,16 @@
+{# Workspace preview pane; swapped in whole by HTMX on every (re)compile. #}
+{% if result.ok %}
+<div class="preview-status {% if result.page_count > preset.page_limit %}over{% else %}ok{% endif %}">
+    {{ result.page_count }} page{{ result.page_count|pluralize }}
+    {% if result.page_count > preset.page_limit %}&middot; over the {{ preset.page_limit }}-page limit{% endif %}
+</div>
+{% else %}
+<div class="preview-status error">
+    Compile failed: {{ result.error }}
+    {% if result.pdf_url %}&middot; showing the last good PDF{% endif %}
+</div>
+<pre class="preview-log">{{ result.log_tail }}</pre>
+{% endif %}
+{% if result.pdf_url %}
+<iframe class="preview-pdf" src="{{ result.pdf_url }}?v={{ result.version }}" title="Preview of {{ preset.name }}"></iframe>
+{% endif %}

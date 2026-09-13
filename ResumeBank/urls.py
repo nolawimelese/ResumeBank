@@ -2,8 +2,8 @@
 URL configuration for ResumeBank project.
 
     /           bank      component manager (Profile, Education, Components, Skills)
-    /presets/   presets   resume builder
-    /compile/   compiler  compile, PDF download, history
+    /presets/   presets   preset list and the workspace (structure form + live PDF preview)
+    /compile/   compiler  preview / save-to-history endpoints used by the workspace, history page
     /admin/     django admin
 """
 from django.conf import settings

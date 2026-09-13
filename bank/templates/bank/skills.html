@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Skills{% endblock %}
+
+{% block content %}
+<h1>Skills</h1>
+<p class="muted">Grouped the way the template prints them. Order sorts within a group; blank rows are ignored.</p>
+<form method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {{ formset.non_form_errors }}
+    <table class="formset">
+        <thead><tr><th>Group</th><th>Name</th><th>Order</th><th>Delete</th></tr></thead>
+        <tbody>
+        {% for f in formset %}
+            <tr>
+                {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+                <td>{{ f.group }}{{ f.group.errors }}</td>
+                <td>{{ f.name }}{{ f.name.errors }}</td>
+                <td>{{ f.order }}{{ f.order.errors }}</td>
+                <td>{{ f.DELETE }}
+                    {% if f.instance.pk %}{% with n=f.instance.presetskill_set.count %}{% if n %}<small class="badge over">in {{ n }} preset{{ n|pluralize }}</small>{% endif %}{% endwith %}{% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <p><button type="submit">Save</button> <a href="{% url 'bank:index' %}">Cancel</a></p>
+</form>
+{% endblock %}

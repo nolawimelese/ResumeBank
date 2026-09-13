@@ -4,5 +4,35 @@
 
 {% block content %}
 <h1>Component Manager</h1>
-<p>Reusable resume components: profile, education, experience/projects/leadership, skills.</p>
+<p class="muted">Source data every resume is assembled from. Edits here show up in every preset that uses the row.</p>
+
+<h2>Profile <a class="edit" href="{% url 'bank:profile' %}">edit</a></h2>
+<p>{{ profile.name|default:"(unnamed)" }} &middot; {{ profile.email }} &middot; {{ profile.phone }} &middot; {{ profile.location }}
+{% for link in profile.links.all %}&middot; {{ link.url }} {% endfor %}</p>
+
+<h2>Education <a class="edit" href="{% url 'bank:education_new' %}">+ add</a></h2>
+<ul>
+{% for edu in educations %}
+    <li><a href="{% url 'bank:education_edit' edu.pk %}">{{ edu }}</a>
+        <span class="muted">{{ edu.start_date|date:"Y" }}&ndash;{{ edu.end_date|date:"Y"|default:"present" }}{% if edu.gpa %} &middot; GPA {{ edu.gpa }}{% endif %} &middot; {{ edu.coursework.count }} course{{ edu.coursework.count|pluralize }}</span></li>
+{% empty %}<li class="muted">None yet.</li>{% endfor %}
+</ul>
+
+{% for cat, label, rows in sections %}
+<h2>{{ label }} <a class="edit" href="{% url 'bank:component_new' %}?category={{ cat }}">+ add</a></h2>
+<ul>
+{% for c in rows %}
+    <li><a href="{% url 'bank:component_edit' c.pk %}">{{ c.title }}</a>
+        {% if c.organization %}<span class="muted">&middot; {{ c.organization }}</span>{% endif %}
+        <span class="muted">&middot; {{ c.bullets.count }} bullet{{ c.bullets.count|pluralize }}</span>
+        {% with n=c.presetcomponent_set.count %}{% if n %}<span class="muted">&middot; in {{ n }} preset{{ n|pluralize }}</span>{% endif %}{% endwith %}
+    </li>
+{% empty %}<li class="muted">None yet.</li>{% endfor %}
+</ul>
+{% endfor %}
+
+<h2>Skills <a class="edit" href="{% url 'bank:skills' %}">edit</a></h2>
+{% for label, rows in skill_groups %}
+<p><strong>{{ label }}:</strong> {% for s in rows %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+{% empty %}<p class="muted">None yet.</p>{% endfor %}
 {% endblock %}

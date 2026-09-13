@@ -5,16 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}ResumeBank{% endblock %} · ResumeBank</title>
     <link rel="stylesheet" href="{% static 'css/site.css' %}">
+    <script src="{% static 'js/htmx.min.js' %}"></script>
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     <nav>
         <a href="{% url 'bank:index' %}">Components</a>
-        <a href="{% url 'presets:index' %}">Builder</a>
-        <a href="{% url 'compiler:index' %}">Compile</a>
+        <a href="{% url 'presets:list' %}">Resumes</a>
+        <a href="{% url 'compiler:history' %}">History</a>
         <a href="{% url 'admin:index' %}">Admin</a>
     </nav>
     <main>
+        {% block messages %}
+        {% for message in messages %}<p class="flash {{ message.tags }}">{{ message }}</p>{% endfor %}
+        {% endblock %}
         {% block content %}{% endblock %}
     </main>
+    <script>
+        // Dim a component's bullets in the workspace when the component itself is unchecked;
+        // the server drops orphan bullets regardless, this is only visual.
+        document.addEventListener('change', function (e) {
+            if (e.target.matches('.comp-block > .row input[type=checkbox]')) {
+                e.target.closest('.comp-block').classList.toggle('off', !e.target.checked);
+            }
+        });
+    </script>
 </body>
 </html>

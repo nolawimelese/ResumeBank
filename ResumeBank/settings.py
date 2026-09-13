@@ -27,6 +27,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# The workspace embeds the preview PDF (served from MEDIA_URL) in an <iframe>;
+# Django's default DENY makes the browser refuse to render it.
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
 
 # Application definition
 

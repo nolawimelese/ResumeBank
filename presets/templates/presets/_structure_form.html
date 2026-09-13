@@ -1,0 +1,68 @@
+{% load markup %}
+{% comment %}Left pane of the workspace. Field names are what presets.views.save parses:
+comp_<id> / bullet_<id> / skill_<id> checkboxes and their _order siblings.{% endcomment %}
+<form id="structure" method="post" action="{% url 'presets:save' preset.pk %}"
+      hx-post="{% url 'presets:save' preset.pk %}"
+      hx-trigger="input delay:500ms"
+      hx-target="#save-status" hx-swap="innerHTML"
+      hx-sync="this:replace">
+    {% csrf_token %}
+
+    <fieldset class="settings">
+        <legend>Settings</legend>
+        <label>Name <input type="text" name="name" value="{{ preset.name }}" required></label>
+        <label>Page limit <input type="number" class="order" name="page_limit" value="{{ preset.page_limit }}" min="1"></label>
+        <label><input type="checkbox" name="include_gpa" {% if preset.include_gpa %}checked{% endif %}> GPA</label>
+        <label><input type="checkbox" name="include_coursework" {% if preset.include_coursework %}checked{% endif %}> Coursework</label>
+    </fieldset>
+
+    {% for section in sections %}
+    <fieldset>
+        <legend>{{ section.label }}</legend>
+        {% for e in section.entries %}
+        <div class="comp-block{% if not e.checked %} off{% endif %}">
+            <div class="row">
+                <label class="grow">
+                    <input type="checkbox" name="comp_{{ e.component.pk }}" {% if e.checked %}checked{% endif %}>
+                    <strong>{{ e.component.title }}</strong>
+                    {% if e.component.organization %}<span class="muted">&middot; {{ e.component.organization }}</span>{% endif %}
+                </label>
+                <input type="number" class="order" name="comp_{{ e.component.pk }}_order" value="{{ e.order }}" min="0" title="Order within section">
+                <a class="edit" href="{% url 'bank:component_edit' e.component.pk %}" target="_blank" title="Edit in the Component Manager">edit</a>
+            </div>
+            {% for b in e.bullets %}
+            <div class="row bullet">
+                <label class="grow">
+                    <input type="checkbox" name="bullet_{{ b.bullet.pk }}" {% if b.checked %}checked{% endif %}>
+                    {{ b.bullet.text|bold }}
+                </label>
+                <input type="number" class="order" name="bullet_{{ b.bullet.pk }}_order" value="{{ b.order }}" min="0" title="Order within component">
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </fieldset>
+    {% empty %}
+    <p class="muted">The bank has no components yet. <a href="{% url 'bank:index' %}">Add some in the Component Manager.</a></p>
+    {% endfor %}
+
+    {% if skill_groups %}
+    <fieldset>
+        <legend>Skills</legend>
+        {% for g in skill_groups %}
+        <h4>{{ g.label }}</h4>
+        {% for s in g.entries %}
+        <div class="row">
+            <label class="grow">
+                <input type="checkbox" name="skill_{{ s.skill.pk }}" {% if s.checked %}checked{% endif %}>
+                {{ s.skill.name }}
+            </label>
+            <input type="number" class="order" name="skill_{{ s.skill.pk }}_order" value="{{ s.order }}" min="0" title="Order within group">
+        </div>
+        {% endfor %}
+        {% endfor %}
+    </fieldset>
+    {% endif %}
+
+    <noscript><button type="submit">Save</button></noscript>
+</form>

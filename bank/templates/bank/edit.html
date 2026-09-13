@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" class="edit-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+    <p>
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
+        {{ field.errors }}
+    </p>
+    {% endfor %}
+
+    <h2>{{ inline_title }}</h2>
+    {{ formset.management_form }}
+    {{ formset.non_form_errors }}
+    <table class="formset">
+        <thead>
+            <tr>{% for field in formset.empty_form.visible_fields %}<th>{{ field.label }}</th>{% endfor %}<th></th></tr>
+        </thead>
+        <tbody>
+        {% for f in formset %}
+            <tr>
+                {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+                {% for field in f.visible_fields %}
+                <td>{{ field }}{{ field.errors }}
+                    {% if field.name == "DELETE" and f.uses %}<small class="badge over">in {{ f.uses }} preset{{ f.uses|pluralize }}</small>{% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <p>
+        <button type="submit">Save</button>
+        <a href="{% url 'bank:index' %}">Cancel</a>
+        {% if delete_url %}&middot; <a class="badge over" href="{{ delete_url }}">Delete</a>{% endif %}
+    </p>
+</form>
+{% endblock %}

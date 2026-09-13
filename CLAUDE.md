@@ -29,11 +29,19 @@ Three Django apps, one project package (`ResumeBank/`), project-level `templates
 
 | App | URL prefix | Role |
 |---|---|---|
-| `bank` | `/` | Source data: `Profile`+`Link`, `Education`+`Coursework`, `Component`+`Bullet`, `Skill` |
-| `presets` | `/presets/` | `ResumePreset` and its join tables `PresetComponent` / `PresetBullet` / `PresetSkill` |
-| `compiler` | `/compile/` | `Resume` — immutable compile-history rows; will own the Jinja2 → pdflatex → pypdf pipeline |
+| `bank` | `/` | Source data: `Profile`+`Link`, `Education`+`Coursework`, `Component`+`Bullet`, `Skill`. Standalone Component Manager CRUD (`bank/forms.py` ModelForms + one-level inline formsets). |
+| `presets` | `/presets/` | `ResumePreset` and its join tables `PresetComponent` / `PresetBullet` / `PresetSkill`. Preset list and the **workspace** page. |
+| `compiler` | `/compile/` | `Resume` — immutable compile-history rows. `compiler/services.py` owns the Jinja2 → pdflatex → pypdf pipeline; views are the preview / save-to-history endpoints the workspace calls, plus the history page. |
 
-Current state: models, migrations, and admin registrations exist; each app's `views.py`/`urls.py` is a single placeholder `index`. The README roadmap lists what is next (component manager pages, resume builder, compile pipeline).
+### Page model
+
+The workspace (`/presets/<id>/`, `presets/templates/presets/workspace.html`) is Overleaf-style: the structure form on the left auto-saves, the real PDF on the right recompiles. Wiring, all HTMX (vendored at `static/js/htmx.min.js`):
+
+1. Any `input` in `#structure` (debounced 500 ms) → `POST /presets/<id>/save/` → `presets.views.save` rewrites the join tables in one transaction and returns the `#save-status` fragment with an `HX-Trigger: preset-saved` header.
+2. `#preview` listens for `preset-saved from:body` (and `load`) → `GET /compile/<id>/preview/` → `compiler.views.preview` runs `services.compile_preview`, which writes `media/previews/<id>/resume.pdf` (no `Resume` row) and returns the pane fragment (`compiler/_preview.html`: page-count strip + cache-busted `<iframe>`, or the LaTeX log tail on failure — the last good PDF stays visible).
+3. "Save to history" → `POST /compile/<id>/` → `services.compile_to_history` creates the `Resume` row. LaTeX failure raises `CompileError` and leaves no row.
+
+Preview and history compiles share `render_tex` / `compile_tex`, so they cannot drift. There is no compile cache: pdflatex runs on every preview (~0.5 s locally).
 
 ### Data model decisions (read these before touching models)
 
@@ -44,8 +52,9 @@ Current state: models, migrations, and admin registrations exist; each app's `vi
 - **Delete-with-warning is a query**, not a scan: `component.presetcomponent_set.exists()`, `skill.presetskill_set.exists()`, `bullet.presetbullet_set.exists()` (the join tables deliberately use default reverse accessors from the bank side, and `related_name` only from the preset side).
 - **`Resume` rows are history.** `preset` is `SET_NULL` with `preset_name` snapshotted; `page_count`/`over_limit` are computed at compile time. Files go to `media/resumes/<resume_id>/` via `resume_upload_path`, so the row must be saved (pk assigned) before files are attached.
 
-### Planned implementation conventions (from `docs/`)
+### Implementation conventions
 
-- **Builder UI**: one plain HTML form per preset — every component/bullet/skill row is a checkbox plus an order number input. The view parses `comp_<id>` / `bullet_<id>` / `skill_<id>` and their `_order` siblings from `request.POST` and rewrites the join tables in one transaction. No Django formsets; reach for HTMX before any frontend framework.
-- **LaTeX rendering**: Jinja2 environment with LaTeX-safe delimiters (`\BLOCK{...}`, `\VAR{...}`, `\#{...}`) rendering `templates/latex/jakes.tex.j2` (Jake's Resume). A `latex_escape` filter must be applied to every user string (`& % $ # _ { } ~ ^ \`). Bullet text supports exactly one markup: `**bold**` → `\textbf{}`. Escape first, then convert the markup.
-- **Compile**: `subprocess.run(["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "resume.tex"], cwd=tmpdir, timeout=60)` in a temp dir, then copy `.pdf`/`.tex` into media. Runs inline in the view — no task queue. Page count via `pypdf`.
+- **Workspace form**: one plain HTML form per preset — every component/bullet/skill row is a checkbox plus an order number input, named `comp_<id>` / `bullet_<id>` / `skill_<id>` with `_order` siblings (`presets/templates/presets/_structure_form.html`). `presets.views.save` parses those and delete-and-recreates the join tables; a `bullet_*` whose parent `comp_*` is unchecked is dropped. No Django formsets there. The Component Manager does use formsets, but only one level deep (Component→Bullet, Education→Coursework, Profile→Link).
+- **LaTeX rendering**: `compiler.services.jinja_env()` uses LaTeX-safe delimiters (`\BLOCK{...}`, `\VAR{...}`, `\#{...}`; note a Jinja comment ends at the first `}`) and renders `templates/latex/<preset.template>.tex.j2`. Apply the `latex` filter to every user string and `bullet` to bullet text (`**bold**` → `\textbf{}`; escape first, then markup). Section headings come from `services.SECTION_TITLES`; empty sections are skipped. Don't name a template dict key `items` — Jinja resolves it to `dict.items`.
+- **Compile**: `services.compile_tex` runs `pdflatex -interaction=nonstopmode -halt-on-error` in a temp dir with a 60 s timeout and returns a `CompileResult` (never raises for LaTeX errors; `ok=False` + first `!` log line). Inline in the view, no task queue. Page count via `pypdf`. The template deliberately imports no `babel` / `fontawesome5` / `marvosym`: TinyTeX here lacks them and Jake's template never uses them.
+- **HTMX conventions**: CSRF via `hx-headers` on `<body>` in `base.html`; fragments live in `_*.html` templates; the top-bar history slot only shows flash messages when rendered as the HTMX response (`show_messages`), because `base.html` already renders them on full pages.

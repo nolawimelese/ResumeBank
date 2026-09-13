@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Resumes{% endblock %}
+
+{% block content %}
+<h1>Resumes</h1>
+<p>Each preset is a selection and ordering of components from the bank. Open one to edit it with a live preview.</p>
+
+<form method="post" action="{% url 'presets:create' %}" class="inline-form">
+    {% csrf_token %}
+    <input type="text" name="name" placeholder="New preset name" required>
+    <button type="submit">Create</button>
+</form>
+
+{% if presets %}
+<table>
+    <thead>
+        <tr><th>Name</th><th>Updated</th><th>Last compile</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for p in presets %}
+        {% with last=p.resumes.first %}
+        <tr>
+            <td><a href="{% url 'presets:workspace' p.pk %}">{{ p.name }}</a></td>
+            <td>{{ p.updated_at|date:"M j, Y H:i" }}</td>
+            <td>
+                {% if last %}
+                    {{ last.generated_at|date:"M j, H:i" }} &middot;
+                    {% if last.over_limit %}<span class="badge over">{{ last.page_count }} pages</span>{% else %}{{ last.page_count }} page{{ last.page_count|pluralize }}{% endif %}
+                {% else %}&mdash;{% endif %}
+            </td>
+            <td class="actions">
+                <a href="{% url 'presets:workspace' p.pk %}">Open</a>
+                <form method="post" action="{% url 'presets:clone' p.pk %}">{% csrf_token %}<button type="submit" class="link">Clone</button></form>
+                <a href="{% url 'presets:delete' p.pk %}">Delete</a>
+            </td>
+        </tr>
+        {% endwith %}
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No presets yet.</p>
+{% endif %}
+{% endblock %}

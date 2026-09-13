@@ -1,0 +1,10 @@
+{# Top-bar slot in the workspace: last "save to history" result + link. Swapped by HTMX after a compile. #}
+{% if show_messages %}{% for message in messages %}<span class="flash {{ message.tags }}">{{ message }}</span>{% endfor %}{% endif %}
+{% with last=preset.resumes.first %}
+{% if last %}
+<a href="{% url 'compiler:history' %}?preset={{ preset.pk }}">History ({{ preset.resumes.count }})</a>
+&middot; last {{ last.generated_at|date:"M j, H:i" }}
+{% else %}
+<a href="{% url 'compiler:history' %}?preset={{ preset.pk }}">History</a> &middot; never saved
+{% endif %}
+{% endwith %}

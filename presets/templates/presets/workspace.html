@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}{{ preset.name }}{% endblock %}
+{% block body_class %}workspace-page{% endblock %}
+
+{% block content %}
+<header class="ws-bar">
+    <a href="{% url 'presets:list' %}">&larr; Resumes</a>
+    <strong class="ws-title">{{ preset.name }}</strong>
+    <span id="save-status" class="muted"></span>
+    <span id="compiling" class="htmx-indicator">Compiling&hellip;</span>
+    <span class="spacer"></span>
+    <span id="history-status">{% include "compiler/_history_bar.html" %}</span>
+    <button type="button"
+            hx-get="{% url 'compiler:preview' preset.pk %}"
+            hx-target="#preview" hx-sync="#preview:replace" hx-indicator="#compiling">Recompile</button>
+    <button type="button"
+            hx-post="{% url 'compiler:compile' preset.pk %}"
+            hx-target="#history-status" hx-indicator="#compiling">Save to history</button>
+    <form method="post" action="{% url 'presets:clone' preset.pk %}">{% csrf_token %}<button type="submit">Clone</button></form>
+</header>
+
+<div class="workspace">
+    <section class="ws-left">
+        {% include "presets/_structure_form.html" %}
+    </section>
+    <section class="ws-right">
+        <div id="preview"
+             hx-get="{% url 'compiler:preview' preset.pk %}"
+             hx-trigger="load, preset-saved from:body"
+             hx-sync="this:replace"
+             hx-indicator="#compiling">
+            <div class="preview-status muted">Compiling&hellip;</div>
+        </div>
+    </section>
+</div>
+{% endblock %}

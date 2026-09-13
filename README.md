@@ -14,6 +14,15 @@ Database: SQLite
 
 PDF: Jinja2 renders a `.tex` template, compiled with `pdflatex` (requires a TeX distribution such as MiKTeX or TeX Live on PATH)
 
+## Pages
+
+| URL | Page |
+|---|---|
+| `/` | Component Manager: profile, education, components + bullets, skills |
+| `/presets/` | Resumes: one row per preset, with create / clone / delete |
+| `/presets/<id>/` | Workspace: pick and order pieces on the left, the compiled PDF re-renders on the right |
+| `/compile/history/` | Every "Save to history" compile, with PDF and `.tex` downloads |
+
 ## Setup
 
 ```
@@ -44,11 +53,16 @@ python manage.py runserver
   - [x] Resume (compile history)
 - [x] Set up SQLite and some test data
 - Set up pages
-  - [ ] Component manager (Components, Skills, Education, Profile)
-  - [ ] Resume Builder (includes clone-preset button)
+  - [x] Component manager (Components, Skills, Education, Profile)
+  - [x] Resumes list (create / clone / delete presets)
+  - [x] Workspace: structure form on the left, live PDF preview on the right (auto-save + recompile via HTMX)
+  - [x] Compile history page with PDF / .tex downloads
 - Compile pipeline
-  - [ ] Jake's Resume `.tex.j2` template
-  - [ ] Jinja2 render -> pdflatex -> pypdf page count
-  - [ ] Compile view, PDF download, history
+  - [x] Jake's Resume `.tex.j2` template
+  - [x] Jinja2 render -> pdflatex -> pypdf page count
+  - [x] Preview compile (no history row) and "Save to history" compile
+- Later
+  - [ ] Drag-and-drop ordering in the workspace
+  - [ ] Education selection per preset (currently every Education row is printed)
 
   </details>

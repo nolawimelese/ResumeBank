@@ -1,0 +1,134 @@
+% Jake's Resume (Jake Gutierrez, MIT license) as a Jinja2 template.
+% Delimiters: BLOCK{...} statements, VAR{...} expressions, #{...} comments,
+% each prefixed with a backslash. Every user string goes through |latex
+% (or |bullet for bullet text). Jinja comments end at the first closing brace.
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+\pdfgentounicode=1
+
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+\begin{document}
+
+\#{ ---------- Header ---------- }
+\begin{center}
+    \textbf{\Huge \scshape \VAR{profile.name|latex}} \\ \vspace{1pt}
+    \small \VAR{header_parts|join(' $|$ ')}
+\end{center}
+
+\#{ ---------- Education ---------- }
+\BLOCK{if educations }
+\section{Education}
+  \resumeSubHeadingListStart
+  \BLOCK{for edu in educations }
+    \resumeSubheading
+      {\VAR{edu.school|latex}}{\VAR{edu.location|latex}}
+      {\VAR{edu.degree|latex}\BLOCK{if preset.include_gpa and edu.gpa is not none }, GPA: \VAR{edu.gpa}\BLOCK{endif}}{\VAR{edu.start_date|date_range(edu.end_date)}}
+    \BLOCK{if preset.include_coursework and edu.coursework.all() }
+      \resumeItemListStart
+        \resumeItem{\textbf{Relevant Coursework}: \VAR{edu.coursework.all()|map(attribute='name')|map('latex')|join(', ')}}
+      \resumeItemListEnd
+    \BLOCK{endif}
+  \BLOCK{endfor}
+  \resumeSubHeadingListEnd
+\BLOCK{endif}
+
+\#{ ---------- Component sections, in template order ---------- }
+\BLOCK{for section in sections if section.entries }
+\section{\VAR{section.label}}
+  \resumeSubHeadingListStart
+  \BLOCK{for item in section.entries }
+    \BLOCK{set c = item.component }
+    \BLOCK{if section.category == 'project' }
+    \resumeProjectHeading
+      {\textbf{\VAR{c.title|latex}}\BLOCK{if c.tech_stack } $|$ \emph{\VAR{c.tech_stack|latex}}\BLOCK{endif}}{\VAR{c.start_date|date_range(c.end_date)}}
+    \BLOCK{elif section.category in ('honor', 'certification') }
+    \resumeProjectHeading
+      {\textbf{\VAR{c.title|latex}}\BLOCK{if c.organization } $|$ \emph{\VAR{c.organization|latex}}\BLOCK{endif}}{\VAR{c.start_date|date}}
+    \BLOCK{else}
+    \resumeSubheading
+      {\VAR{c.title|latex}}{\VAR{c.start_date|date_range(c.end_date)}}
+      {\VAR{c.organization|latex}}{\VAR{c.location|latex}}
+    \BLOCK{endif}
+    \BLOCK{if item.bullets }
+      \resumeItemListStart
+      \BLOCK{for b in item.bullets }
+        \resumeItem{\VAR{b.text|bullet}}
+      \BLOCK{endfor}
+      \resumeItemListEnd
+    \BLOCK{endif}
+  \BLOCK{endfor}
+  \resumeSubHeadingListEnd
+\BLOCK{endfor}
+
+\#{ ---------- Skills ---------- }
+\BLOCK{if skill_groups }
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+    \BLOCK{for g in skill_groups }
+     \textbf{\VAR{g.label}}{: \VAR{g.names|map('latex')|join(', ')}} \\
+    \BLOCK{endfor}
+    }}
+ \end{itemize}
+\BLOCK{endif}
+
+\end{document}

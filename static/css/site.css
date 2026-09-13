@@ -1,2 +1,58 @@
+:root {
+    --border: #ccc;
+    --muted: #666;
+    --ok: #2e7d32;
+    --warn: #b71c1c;
+    --warn-bg: #fdecea;
+    --ok-bg: #edf7ed;
+    --pane-bg: #f6f6f6;
+}
+
 body { font-family: system-ui, sans-serif; max-width: 60rem; margin: 0 auto; padding: 1rem; }
-nav { display: flex; gap: 1rem; border-bottom: 1px solid #ccc; padding-bottom: .5rem; margin-bottom: 1rem; }
+nav { display: flex; gap: 1rem; border-bottom: 1px solid var(--border); padding-bottom: .5rem; margin-bottom: 1rem; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.actions { display: flex; gap: .75rem; align-items: center; }
+.actions form { display: inline; }
+.inline-form { display: flex; gap: .5rem; margin-bottom: 1rem; }
+button.link { background: none; border: 0; padding: 0; color: -webkit-link; text-decoration: underline; cursor: pointer; font: inherit; }
+button.danger { color: var(--warn); }
+.muted { color: var(--muted); }
+.badge.over, .flash.error { color: var(--warn); }
+.flash.success { color: var(--ok); }
+
+/* ---------- Workspace: full-viewport two-pane layout ---------- */
+body.workspace-page { max-width: none; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
+body.workspace-page nav { margin: 0; padding: .5rem 1rem; }
+body.workspace-page main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+.ws-bar { display: flex; gap: .75rem; align-items: center; padding: .5rem 1rem; border-bottom: 1px solid var(--border); font-size: .9rem; }
+.ws-bar form { display: inline; }
+.ws-title { font-size: 1.05rem; }
+.spacer { flex: 1; }
+
+.workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(22rem, 2fr) 3fr; }
+.ws-left { overflow-y: auto; padding: 1rem; }
+.ws-right { border-left: 1px solid var(--border); background: var(--pane-bg); display: flex; flex-direction: column; min-height: 0; }
+#preview { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.preview-pdf { flex: 1; width: 100%; border: 0; }
+.preview-status { padding: .35rem 1rem; font-size: .85rem; border-bottom: 1px solid var(--border); }
+.preview-status.ok { background: var(--ok-bg); color: var(--ok); }
+.preview-status.over, .preview-status.error { background: var(--warn-bg); color: var(--warn); }
+.preview-log { margin: 0; padding: .75rem 1rem; font-size: .75rem; max-height: 40%; overflow: auto; background: #fff; border-bottom: 1px solid var(--border); white-space: pre-wrap; }
+
+/* Structure form */
+#structure fieldset { border: 1px solid var(--border); margin: 0 0 1rem; padding: .5rem .75rem; }
+#structure legend { font-weight: 600; padding: 0 .25rem; }
+#structure h4 { margin: .5rem 0 .25rem; font-size: .85rem; color: var(--muted); text-transform: uppercase; }
+.settings { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+.row { display: flex; gap: .5rem; align-items: baseline; padding: .15rem 0; }
+.row .grow { flex: 1; }
+.row.bullet { margin-left: 1.5rem; font-size: .9rem; }
+.comp-block { margin-bottom: .5rem; }
+.comp-block.off .row.bullet { opacity: .45; }
+input.order { width: 3.5rem; }
+a.edit { font-size: .8rem; color: var(--muted); }
+
+/* htmx default indicator styles are injected by htmx itself; make ours a little louder. */
+#compiling { color: var(--muted); font-style: italic; }

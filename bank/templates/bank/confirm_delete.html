@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Delete{% endblock %}
+
+{% block content %}
+<h1>Delete "{{ object }}"?</h1>
+{% if uses %}
+<p class="flash error">This row is used by {{ uses }} preset{{ uses|pluralize }}. Deleting it removes it (and its bullets) from those presets.</p>
+{% else %}
+<p>No preset references this row.</p>
+{% endif %}
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="danger">Delete</button>
+    <a href="{% url 'bank:index' %}">Cancel</a>
+</form>
+{% endblock %}

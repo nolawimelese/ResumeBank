@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Delete {{ preset.name }}{% endblock %}
+
+{% block content %}
+<h1>Delete "{{ preset.name }}"?</h1>
+<p>The preset and its selections are removed. Bank components are untouched, and {{ preset.resumes.count }} compiled resume{{ preset.resumes.count|pluralize }} in the history stay downloadable.</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="danger">Delete</button>
+    <a href="{% url 'presets:workspace' preset.pk %}">Cancel</a>
+</form>
+{% endblock %}
