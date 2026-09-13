@@ -1,0 +1,20 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}ResumeBank{% endblock %} · ResumeBank</title>
+    <link rel="stylesheet" href="{% static 'css/site.css' %}">
+</head>
+<body>
+    <nav>
+        <a href="{% url 'bank:index' %}">Components</a>
+        <a href="{% url 'presets:index' %}">Builder</a>
+        <a href="{% url 'compiler:index' %}">Compile</a>
+        <a href="{% url 'admin:index' %}">Admin</a>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

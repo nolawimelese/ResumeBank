@@ -21,7 +21,7 @@ PDF: Jinja2 renders a `.tex` template, compiled with `pdflatex` (requires a TeX 
 <summary>Foundations</summary>
 
 - [x] Set up venv
-- [ ] Build Django App
+- [x] Build Django App (`bank`, `presets`, `compiler`)
 - Define database schema and models
   - [ ] Profile + Link
   - [ ] Education + Coursework
