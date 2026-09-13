@@ -12,14 +12,30 @@ Framework: Django
 
 Database: SQLite
 
+PDF: Jinja2 renders a `.tex` template, compiled with `pdflatex` (requires a TeX distribution such as MiKTeX or TeX Live on PATH)
+
 ## Roadmap
 
-Foundations
+<details>
+
+<summary>Foundations</summary>
 
 - [x] Set up venv
 - [ ] Build Django App
-- [ ] Define database schema and models
-- [ ] Set up SQlite and some test data
+- Define database schema and models
+  - [ ] Profile + Link
+  - [ ] Education + Coursework
+  - [ ] Component + Bullet
+  - [ ] Skill
+  - [ ] ResumePreset + PresetComponent / PresetBullet / PresetSkill
+  - [ ] Resume (compile history)
+- [ ] Set up SQLite and some test data
 - Set up pages
-  - [ ] Component manager
-  - [ ] Resume Builder
+  - [ ] Component manager (Components, Skills, Education, Profile)
+  - [ ] Resume Builder (includes clone-preset button)
+- Compile pipeline
+  - [ ] Jake's Resume `.tex.j2` template
+  - [ ] Jinja2 render -> pdflatex -> pypdf page count
+  - [ ] Compile view, PDF download, history
+
+  </details>
