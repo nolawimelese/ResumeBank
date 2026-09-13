@@ -21,14 +21,14 @@ PDF: Jinja2 renders a `.tex` template, compiled with `pdflatex` (requires a TeX 
 <summary>Foundations</summary>
 
 - [x] Set up venv
-- [x] Build Django App (`bank`, `presets`, `compiler`)
+- [x] Build Django Apps (`bank`, `presets`, `compiler`)
 - Define database schema and models
-  - [ ] Profile + Link
-  - [ ] Education + Coursework
-  - [ ] Component + Bullet
-  - [ ] Skill
-  - [ ] ResumePreset + PresetComponent / PresetBullet / PresetSkill
-  - [ ] Resume (compile history)
+  - [x] Profile + Link
+  - [x] Education + Coursework
+  - [x] Component + Bullet
+  - [x] Skill
+  - [x] ResumePreset + PresetComponent / PresetBullet / PresetSkill
+  - [x] Resume (compile history)
 - [ ] Set up SQLite and some test data
 - Set up pages
   - [ ] Component manager (Components, Skills, Education, Profile)
