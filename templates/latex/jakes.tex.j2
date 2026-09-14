@@ -78,13 +78,14 @@
 \BLOCK{if educations }
 \section{Education}
   \resumeSubHeadingListStart
-  \BLOCK{for edu in educations }
+  \BLOCK{for item in educations }
+    \BLOCK{set edu = item.education }
     \resumeSubheading
       {\VAR{edu.school|latex}}{\VAR{edu.location|latex}}
       {\VAR{edu.degree|latex}\BLOCK{if preset.include_gpa and edu.gpa is not none }, GPA: \VAR{edu.gpa}\BLOCK{endif}}{\VAR{edu.start_date|date_range(edu.end_date)}}
-    \BLOCK{if preset.include_coursework and edu.coursework.all() }
+    \BLOCK{if item.courses }
       \resumeItemListStart
-        \resumeItem{\textbf{Relevant Coursework}: \VAR{edu.coursework.all()|map(attribute='name')|map('latex')|join(', ')}}
+        \resumeItem{\textbf{Relevant Coursework}: \VAR{item.courses|map(attribute='name')|map('latex')|join(', ')}}
       \resumeItemListEnd
     \BLOCK{endif}
   \BLOCK{endfor}

@@ -11,7 +11,7 @@ from django.db import transaction
 
 from bank.models import Bullet, Component, Coursework, Education, Link, Profile, Skill
 from compiler.models import Resume
-from presets.models import PresetBullet, PresetComponent, PresetSkill, ResumePreset
+from presets.models import PresetBullet, PresetComponent, PresetCoursework, PresetSkill, ResumePreset
 
 # (category, title, organization, location, start, end, tech_stack, [bullets])
 COMPONENTS = [
@@ -219,7 +219,7 @@ class Command(BaseCommand):
             ],
             skill_names=['Python', 'SQL', 'C', 'Django', 'PostgreSQL', 'Docker', 'Git', 'Linux'],
             components_by_title=components, skills_by_name=skills,
-            include_coursework=False,
+            course_names=['Databases', 'Operating Systems', 'Computer Networks'],
         )
         self.make_preset(
             'ML Research',
@@ -231,10 +231,13 @@ class Command(BaseCommand):
             ],
             skill_names=['Python', 'PyTorch', 'SQL', 'Linux', 'Git', 'LaTeX', 'Technical Writing'],
             components_by_title=components, skills_by_name=skills,
+            course_names=['Machine Learning', 'Algorithms'],
             page_limit=2,
         )
 
-    def make_preset(self, name, components, skill_names, components_by_title, skills_by_name, **fields):
+    def make_preset(self, name, components, skill_names, components_by_title, skills_by_name,
+                    course_names=None, **fields):
+        """course_names=None picks every course in bank order; a list picks those, in that order."""
         preset = ResumePreset.objects.create(name=name, **fields)
         for order, (title, bullet_indices) in enumerate(components):
             comp = components_by_title[title]
@@ -246,5 +249,12 @@ class Command(BaseCommand):
             ])
         PresetSkill.objects.bulk_create([
             PresetSkill(preset=preset, skill=skills_by_name[n], order=i) for i, n in enumerate(skill_names)
+        ])
+        courses = list(Coursework.objects.all())
+        if course_names is not None:
+            by_name = {c.name: c for c in courses}
+            courses = [by_name[n] for n in course_names]
+        PresetCoursework.objects.bulk_create([
+            PresetCoursework(preset=preset, coursework=c, order=i) for i, c in enumerate(courses)
         ])
         return preset

@@ -2,11 +2,12 @@
 A ResumePreset is a specific selection and ordering of bank rows.
 
 A preset stores no lists of ids; what it includes is defined entirely by the
-PresetComponent / PresetBullet / PresetSkill join tables. Those hold
-references, not copies, so editing a Component, Bullet or Skill propagates
-to every preset that uses it. Delete-with-warning is a query on the default
-reverse accessors: component.presetcomponent_set.exists(),
-bullet.presetbullet_set.exists(), skill.presetskill_set.exists().
+PresetComponent / PresetBullet / PresetSkill / PresetCoursework join tables.
+Those hold references, not copies, so editing a Component, Bullet, Skill or
+Coursework propagates to every preset that uses it. Delete-with-warning is a
+query on the default reverse accessors: component.presetcomponent_set.exists(),
+bullet.presetbullet_set.exists(), skill.presetskill_set.exists(),
+coursework.presetcoursework_set.exists().
 """
 from django.db import models
 
@@ -17,9 +18,8 @@ class ResumePreset(models.Model):
 
     name = models.CharField(max_length=100, unique=True)
     template = models.CharField(max_length=20, choices=Template.choices, default=Template.JAKES)
-    # Toggles rather than component picks.
+    # A toggle rather than a pick: GPA is a field on Education, not a row of its own.
     include_gpa = models.BooleanField(default=True)
-    include_coursework = models.BooleanField(default=True)
     # Used for the over-limit check after compiling.
     page_limit = models.PositiveSmallIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -81,3 +81,22 @@ class PresetSkill(models.Model):
 
     def __str__(self):
         return f'{self.preset} / {self.skill}'
+
+
+class PresetCoursework(models.Model):
+    """A Coursework row included in a preset. Every Education always renders; this only
+    picks which of its courses appear on the "Relevant Coursework" line, and in what order."""
+
+    preset = models.ForeignKey(ResumePreset, on_delete=models.CASCADE, related_name='preset_coursework')
+    coursework = models.ForeignKey('bank.Coursework', on_delete=models.CASCADE)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name_plural = 'preset coursework'
+        constraints = [
+            models.UniqueConstraint(fields=['preset', 'coursework'], name='unique_coursework_per_preset'),
+        ]
+
+    def __str__(self):
+        return f'{self.preset} / {self.coursework}'

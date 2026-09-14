@@ -5,8 +5,8 @@ from unittest import skipUnless
 
 from django.test import TestCase, override_settings
 
-from bank.models import Bullet, Component, Profile, Skill
-from presets.models import PresetBullet, PresetComponent, PresetSkill, ResumePreset
+from bank.models import Bullet, Component, Coursework, Education, Profile, Skill
+from presets.models import PresetBullet, PresetComponent, PresetCoursework, PresetSkill, ResumePreset
 
 from . import services
 from .models import Resume
@@ -47,6 +47,20 @@ class RenderTests(TestCase):
         pc = PresetComponent.objects.create(preset=self.preset, component=comp)
         PresetBullet.objects.create(preset_component=pc, bullet=bullet)
         PresetSkill.objects.create(preset=self.preset, skill=Skill.objects.create(name='C++'))
+        self.edu = Education.objects.create(school='State U', degree='B.S. CS', start_date=date(2023, 8, 1))
+        self.algo = Coursework.objects.create(education=self.edu, name='Algorithms', order=0)
+        self.db = Coursework.objects.create(education=self.edu, name='Databases & SQL', order=1)
+
+    def test_coursework_line_lists_only_picked_courses_in_preset_order(self):
+        PresetCoursework.objects.create(preset=self.preset, coursework=self.db, order=0)
+        PresetCoursework.objects.create(preset=self.preset, coursework=self.algo, order=1)
+        tex = services.render_tex(self.preset)
+        self.assertIn(r'\textbf{Relevant Coursework}: Databases \& SQL, Algorithms}', tex)
+
+    def test_no_picked_courses_omits_the_coursework_line(self):
+        tex = services.render_tex(self.preset)
+        self.assertIn('State U', tex)  # education itself always renders
+        self.assertNotIn('Relevant Coursework', tex)
 
     def test_render_escapes_user_strings(self):
         tex = services.render_tex(self.preset)

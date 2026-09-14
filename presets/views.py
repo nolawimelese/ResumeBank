@@ -12,12 +12,12 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from bank.models import Bullet, Component, Skill
+from bank.models import Bullet, Component, Coursework, Education, Skill
 from compiler.services import SECTION_TITLES, delete_preview
 
-from .models import PresetBullet, PresetComponent, PresetSkill, ResumePreset
+from .models import PresetBullet, PresetComponent, PresetCoursework, PresetSkill, ResumePreset
 
-_KEY_RE = re.compile(r'^(comp|bullet|skill)_(\d+)$')
+_KEY_RE = re.compile(r'^(comp|bullet|skill|course)_(\d+)$')
 
 
 def preset_list(request):
@@ -42,9 +42,25 @@ def workspace(request, pk):
     preset = get_object_or_404(ResumePreset, pk=pk)
     return render(request, 'presets/workspace.html', {
         'preset': preset,
+        'educations': _education_groups(preset),
         'sections': _component_sections(preset),
         'skill_groups': _skill_groups(preset),
     })
+
+
+def _education_groups(preset):
+    """Every Education (always rendered) with its courses, annotated with this preset's picks and order."""
+    picked = {pc.coursework_id: pc.order for pc in preset.preset_coursework.all()}
+    return [
+        {
+            'education': edu,
+            'entries': [
+                {'course': c, 'checked': c.pk in picked, 'order': picked.get(c.pk, c.order)}
+                for c in edu.coursework.all()
+            ],
+        }
+        for edu in Education.objects.prefetch_related('coursework')
+    ]
 
 
 def _component_sections(preset):
@@ -82,8 +98,8 @@ def _skill_groups(preset):
 
 
 def _parse_picks(post):
-    """{'comp': {id: order}, 'bullet': {...}, 'skill': {...}} from checked boxes and their _order siblings."""
-    picks = {'comp': {}, 'bullet': {}, 'skill': {}}
+    """{'comp': {id: order}, 'bullet': {...}, 'skill': {...}, 'course': {...}} from checked boxes and their _order siblings."""
+    picks = {'comp': {}, 'bullet': {}, 'skill': {}, 'course': {}}
     for key in post:
         m = _KEY_RE.match(key)
         if m:
@@ -116,7 +132,6 @@ def save(request, pk):
 
     with transaction.atomic():
         preset.include_gpa = 'include_gpa' in post
-        preset.include_coursework = 'include_coursework' in post
         preset.page_limit = max(1, _to_int(post.get('page_limit'), preset.page_limit))
         preset.save()
         _rewrite_joins(preset, _parse_picks(post))
@@ -131,7 +146,7 @@ def save(request, pk):
 
 
 def _rewrite_joins(preset, picks):
-    """Replace the three join tables. Bullets are only kept under a component that is itself picked."""
+    """Replace the four join tables. Bullets are only kept under a component that is itself picked."""
     valid_components = set(Component.objects.filter(pk__in=picks['comp']).values_list('pk', flat=True))
     preset.preset_components.all().delete()  # cascades to PresetBullet
     preset_components = {
@@ -154,6 +169,13 @@ def _rewrite_joins(preset, picks):
         for sid, order in picks['skill'].items() if sid in valid_skills
     ])
 
+    valid_courses = set(Coursework.objects.filter(pk__in=picks['course']).values_list('pk', flat=True))
+    preset.preset_coursework.all().delete()
+    PresetCoursework.objects.bulk_create([
+        PresetCoursework(preset=preset, coursework_id=cid, order=order)
+        for cid, order in picks['course'].items() if cid in valid_courses
+    ])
+
 
 @require_POST
 def clone(request, pk):
@@ -167,7 +189,7 @@ def clone(request, pk):
     with transaction.atomic():
         preset = ResumePreset.objects.create(
             name=name, template=source.template, include_gpa=source.include_gpa,
-            include_coursework=source.include_coursework, page_limit=source.page_limit,
+            page_limit=source.page_limit,
         )
         for pc in source.preset_components.prefetch_related('preset_bullets'):
             new_pc = PresetComponent.objects.create(preset=preset, component_id=pc.component_id, order=pc.order)
@@ -178,6 +200,10 @@ def clone(request, pk):
         PresetSkill.objects.bulk_create([
             PresetSkill(preset=preset, skill_id=ps.skill_id, order=ps.order)
             for ps in source.preset_skills.all()
+        ])
+        PresetCoursework.objects.bulk_create([
+            PresetCoursework(preset=preset, coursework_id=pc.coursework_id, order=pc.order)
+            for pc in source.preset_coursework.all()
         ])
     messages.success(request, f'Cloned "{source.name}" as "{preset.name}".')
     return redirect('presets:workspace', pk=preset.pk)

@@ -21,11 +21,14 @@
         {% block content %}{% endblock %}
     </main>
     <script>
-        // Dim a component's bullets in the workspace when the component itself is unchecked;
-        // the server drops orphan bullets regardless, this is only visual.
+        // Dim and disable a component's bullets in the workspace when the component's own
+        // checkbox (input.comp-toggle, never a bullet or course row) is unchecked. Disabled
+        // inputs are not submitted; the server drops orphan bullets regardless.
         document.addEventListener('change', function (e) {
-            if (e.target.matches('.comp-block > .row input[type=checkbox]')) {
-                e.target.closest('.comp-block').classList.toggle('off', !e.target.checked);
+            if (e.target.matches('input.comp-toggle')) {
+                var block = e.target.closest('.comp-block');
+                block.classList.toggle('off', !e.target.checked);
+                block.querySelectorAll('.row.bullet input').forEach(function (i) { i.disabled = !e.target.checked; });
             }
         });
     </script>

@@ -1,6 +1,6 @@
 {% load markup %}
 {% comment %}Left pane of the workspace. Field names are what presets.views.save parses:
-comp_<id> / bullet_<id> / skill_<id> checkboxes and their _order siblings.{% endcomment %}
+comp_<id> / bullet_<id> / skill_<id> / course_<id> checkboxes and their _order siblings.{% endcomment %}
 <form id="structure" method="post" action="{% url 'presets:save' preset.pk %}"
       hx-post="{% url 'presets:save' preset.pk %}"
       hx-trigger="input delay:500ms"
@@ -13,8 +13,35 @@ comp_<id> / bullet_<id> / skill_<id> checkboxes and their _order siblings.{% end
         <label>Name <input type="text" name="name" value="{{ preset.name }}" required></label>
         <label>Page limit <input type="number" class="order" name="page_limit" value="{{ preset.page_limit }}" min="1"></label>
         <label><input type="checkbox" name="include_gpa" {% if preset.include_gpa %}checked{% endif %}> GPA</label>
-        <label><input type="checkbox" name="include_coursework" {% if preset.include_coursework %}checked{% endif %}> Coursework</label>
     </fieldset>
+
+    {% if educations %}
+    <fieldset>
+        <legend>Education</legend>
+        {% for g in educations %}
+        <div class="comp-block">
+            <div class="row">
+                <span class="grow">
+                    <strong>{{ g.education.school }}</strong>
+                    <span class="muted">&middot; {{ g.education.degree }}</span>
+                </span>
+                <a class="edit" href="{% url 'bank:education_edit' g.education.pk %}" target="_blank" title="Edit in the Component Manager">edit</a>
+            </div>
+            {% for c in g.entries %}
+            <div class="row bullet">
+                <label class="grow">
+                    <input type="checkbox" name="course_{{ c.course.pk }}" {% if c.checked %}checked{% endif %}>
+                    {{ c.course.name }}
+                </label>
+                <input type="number" class="order" name="course_{{ c.course.pk }}_order" value="{{ c.order }}" min="0" title="Order within coursework line">
+            </div>
+            {% empty %}
+            <p class="row bullet muted">No coursework entered for this degree.</p>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </fieldset>
+    {% endif %}
 
     {% for section in sections %}
     <fieldset>
@@ -23,7 +50,7 @@ comp_<id> / bullet_<id> / skill_<id> checkboxes and their _order siblings.{% end
         <div class="comp-block{% if not e.checked %} off{% endif %}">
             <div class="row">
                 <label class="grow">
-                    <input type="checkbox" name="comp_{{ e.component.pk }}" {% if e.checked %}checked{% endif %}>
+                    <input type="checkbox" class="comp-toggle" name="comp_{{ e.component.pk }}" {% if e.checked %}checked{% endif %}>
                     <strong>{{ e.component.title }}</strong>
                     {% if e.component.organization %}<span class="muted">&middot; {{ e.component.organization }}</span>{% endif %}
                 </label>
@@ -33,10 +60,10 @@ comp_<id> / bullet_<id> / skill_<id> checkboxes and their _order siblings.{% end
             {% for b in e.bullets %}
             <div class="row bullet">
                 <label class="grow">
-                    <input type="checkbox" name="bullet_{{ b.bullet.pk }}" {% if b.checked %}checked{% endif %}>
+                    <input type="checkbox" name="bullet_{{ b.bullet.pk }}" {% if b.checked %}checked{% endif %}{% if not e.checked %} disabled{% endif %}>
                     {{ b.bullet.text|bold }}
                 </label>
-                <input type="number" class="order" name="bullet_{{ b.bullet.pk }}_order" value="{{ b.order }}" min="0" title="Order within component">
+                <input type="number" class="order" name="bullet_{{ b.bullet.pk }}_order" value="{{ b.order }}" min="0" title="Order within component"{% if not e.checked %} disabled{% endif %}>
             </div>
             {% endfor %}
         </div>

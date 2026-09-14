@@ -143,11 +143,21 @@ def resolve_preset(preset):
         by_group[ps.skill.group].append(ps.skill.name)
     skill_groups = [{'label': g.label, 'names': by_group[g]} for g in Skill.Group if by_group[g]]
 
+    # Every Education renders; the preset only picks which courses go on its coursework line.
+    preset_coursework = preset.preset_coursework.select_related('coursework').order_by('order', 'id')
+    courses_by_education = {}
+    for pc in preset_coursework:
+        courses_by_education.setdefault(pc.coursework.education_id, []).append(pc.coursework)
+    educations = [
+        {'education': edu, 'courses': courses_by_education.get(edu.pk, [])}
+        for edu in Education.objects.all()
+    ]
+
     return {
         'preset': preset,
         'profile': profile,
         'header_parts': header_parts(profile, links),
-        'educations': list(Education.objects.prefetch_related('coursework')),
+        'educations': educations,
         'sections': sections,
         'skill_groups': skill_groups,
     }
