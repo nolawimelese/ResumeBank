@@ -7,3 +7,5 @@ media/
 
 # dev folder
 docs
+# local secrets (see .env.example)
+.env
