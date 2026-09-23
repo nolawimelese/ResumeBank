@@ -63,6 +63,9 @@ SECTION_TITLES = {
     Component.Category.LEADERSHIP: 'Leadership',
     Component.Category.CERTIFICATION: 'Certifications',
 }
+# Headings for the Component Manager / workspace, which list every category
+# (including Honors, which the PDF nests under Education instead).
+CATEGORY_TITLES = {**SECTION_TITLES, Component.Category.HONOR: 'Honors'}
 
 
 def latex_escape(value):

@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from bank.models import Bullet, Component, Coursework, Education, Skill
-from compiler.services import SECTION_TITLES, delete_preview
+from compiler.services import CATEGORY_TITLES, delete_preview
 
 from .models import PresetBullet, PresetComponent, PresetCoursework, PresetSkill, ResumePreset
 
@@ -80,7 +80,7 @@ def _component_sections(preset):
             ],
         })
     return [
-        {'label': SECTION_TITLES[cat], 'entries': entries}
+        {'label': CATEGORY_TITLES[cat], 'entries': entries}
         for cat, entries in by_category.items() if entries
     ]
 

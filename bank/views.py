@@ -8,7 +8,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from compiler.services import SECTION_TITLES
+from compiler.services import CATEGORY_TITLES
 
 from .forms import (
     BulletFormSet, ComponentForm, CourseworkFormSet, EducationForm, LinkFormSet, ProfileForm, SkillFormSet,
@@ -28,7 +28,7 @@ def index(request):
     return render(request, 'bank/index.html', {
         'profile': Profile.load(),
         'educations': Education.objects.prefetch_related('coursework'),
-        'sections': [(cat, SECTION_TITLES[cat], rows) for cat, rows in by_category.items()],
+        'sections': [(cat, CATEGORY_TITLES[cat], rows) for cat, rows in by_category.items()],
         'skill_groups': [(g.label, rows) for g, rows in by_group.items() if rows],
     })
 

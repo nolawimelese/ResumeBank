@@ -125,3 +125,12 @@ class CloneTests(TestCase):
         # A second clone gets a distinct name.
         self.client.post(reverse('presets:clone', args=[preset.pk]))
         self.assertTrue(ResumePreset.objects.filter(name='Base (copy) 2').exists())
+
+
+class WorkspaceTests(TestCase):
+    def test_workspace_lists_honors(self):
+        preset = ResumePreset.objects.create(name='Base')
+        Component.objects.create(category=Component.Category.HONOR, title='Deans List')
+        response = self.client.get(reverse('presets:workspace', args=[preset.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Deans List')
