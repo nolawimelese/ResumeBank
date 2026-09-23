@@ -59,6 +59,15 @@
     \end{tabular*}\vspace{-7pt}
 }
 
+% Like resumeProjectHeading, but packed tighter: honors are one-liners
+% listed back to back under Education.
+\newcommand{\resumeHonorHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-9pt}
+}
+
 \newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
 \renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
 \newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
@@ -90,9 +99,11 @@
     \BLOCK{endif}
   \BLOCK{endfor}
   \#{ Honors & scholarships render here, nested under Education (same list). }
+  \#{ Pull the first honor up to close the gap a coursework list leaves. }
+  \BLOCK{if honors and educations and educations[-1].courses }\vspace{-4pt}\BLOCK{endif}
   \BLOCK{for item in honors }
     \BLOCK{set c = item.component }
-    \resumeProjectHeading
+    \resumeHonorHeading
       {\textbf{\VAR{c.title|latex}}\BLOCK{if c.organization } $|$ \emph{\VAR{c.organization|latex}}\BLOCK{endif}}{\VAR{c.start_date|date}}
     \BLOCK{if item.bullets }
       \resumeItemListStart
