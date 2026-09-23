@@ -22,6 +22,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.files.base import ContentFile
+from django.db import transaction
 from jinja2 import Environment, FileSystemLoader
 from pypdf import PdfReader
 
@@ -45,17 +46,21 @@ _ESCAPES = {
     '}': r'\}',
     '~': r'\textasciitilde{}',
     '^': r'\textasciicircum{}',
+    # OT1 (no fontenc) prints these as ¡ ¿ — unless spelled out.
+    '<': r'\textless{}',
+    '>': r'\textgreater{}',
+    '|': r'\textbar{}',
 }
 _ESCAPE_RE = re.compile('|'.join(re.escape(c) for c in _ESCAPES))
 _BOLD_RE = re.compile(r'\*\*(.+?)\*\*')
 _URL_SCHEME_RE = re.compile(r'^https?://(www\.)?')
 
 # Section headings as Jake's template prints them; Component.Category labels are singular.
+# Honors have no section of their own: they render nested under Education.
 SECTION_TITLES = {
     Component.Category.EXPERIENCE: 'Experience',
     Component.Category.PROJECT: 'Projects',
     Component.Category.LEADERSHIP: 'Leadership',
-    Component.Category.HONOR: 'Honors',
     Component.Category.CERTIFICATION: 'Certifications',
 }
 
@@ -132,9 +137,12 @@ def resolve_preset(preset):
             'component': pc.component,
             'bullets': [pb.bullet for pb in pc.preset_bullets.all()],
         })
+    # Honors/scholarships render nested under Education (see the template), not as
+    # their own mid-resume section, so they're pulled out of the section list here.
+    honors = by_category[Component.Category.HONOR]
     sections = [
         {'category': cat, 'label': SECTION_TITLES[cat], 'entries': by_category[cat]}
-        for cat in Component.Category
+        for cat in Component.Category if cat != Component.Category.HONOR
     ]
 
     preset_skills = preset.preset_skills.select_related('skill').order_by('order', 'id')
@@ -158,6 +166,7 @@ def resolve_preset(preset):
         'profile': profile,
         'header_parts': header_parts(profile, links),
         'educations': educations,
+        'honors': honors,
         'sections': sections,
         'skill_groups': skill_groups,
     }
@@ -242,16 +251,18 @@ def compile_to_history(preset):
     result = compile_preset(preset)
     if not result.ok:
         raise CompileError(result)
-    # Saved first so resume_upload_path has a pk to build the directory from.
-    resume = Resume.objects.create(
-        preset=preset,
-        preset_name=preset.name,
-        page_count=result.page_count,
-        over_limit=result.page_count > preset.page_limit,
-    )
-    resume.pdf_file.save('resume.pdf', ContentFile(result.pdf), save=False)
-    resume.tex_file.save('resume.tex', ContentFile(result.tex.encode('utf-8')), save=False)
-    resume.save()
+    # Atomic so a failed file write can't leave a Resume row with no files.
+    with transaction.atomic():
+        # Saved first so resume_upload_path has a pk to build the directory from.
+        resume = Resume.objects.create(
+            preset=preset,
+            preset_name=preset.name,
+            page_count=result.page_count,
+            over_limit=result.page_count > preset.page_limit,
+        )
+        resume.pdf_file.save('resume.pdf', ContentFile(result.pdf), save=False)
+        resume.tex_file.save('resume.tex', ContentFile(result.tex.encode('utf-8')), save=False)
+        resume.save()
     return resume
 
 

@@ -75,7 +75,7 @@
 \end{center}
 
 \#{ ---------- Education ---------- }
-\BLOCK{if educations }
+\BLOCK{if educations or honors }
 \section{Education}
   \resumeSubHeadingListStart
   \BLOCK{for item in educations }
@@ -86,6 +86,19 @@
     \BLOCK{if item.courses }
       \resumeItemListStart
         \resumeItem{\textbf{Relevant Coursework}: \VAR{item.courses|map(attribute='name')|map('latex')|join(', ')}}
+      \resumeItemListEnd
+    \BLOCK{endif}
+  \BLOCK{endfor}
+  \#{ Honors & scholarships render here, nested under Education (same list). }
+  \BLOCK{for item in honors }
+    \BLOCK{set c = item.component }
+    \resumeProjectHeading
+      {\textbf{\VAR{c.title|latex}}\BLOCK{if c.organization } $|$ \emph{\VAR{c.organization|latex}}\BLOCK{endif}}{\VAR{c.start_date|date}}
+    \BLOCK{if item.bullets }
+      \resumeItemListStart
+      \BLOCK{for b in item.bullets }
+        \resumeItem{\VAR{b.text|bullet}}
+      \BLOCK{endfor}
       \resumeItemListEnd
     \BLOCK{endif}
   \BLOCK{endfor}
@@ -101,7 +114,7 @@
     \BLOCK{if section.category == 'project' }
     \resumeProjectHeading
       {\textbf{\VAR{c.title|latex}}\BLOCK{if c.tech_stack } $|$ \emph{\VAR{c.tech_stack|latex}}\BLOCK{endif}}{\VAR{c.start_date|date_range(c.end_date)}}
-    \BLOCK{elif section.category in ('honor', 'certification') }
+    \BLOCK{elif section.category == 'certification' }
     \resumeProjectHeading
       {\textbf{\VAR{c.title|latex}}\BLOCK{if c.organization } $|$ \emph{\VAR{c.organization|latex}}\BLOCK{endif}}{\VAR{c.start_date|date}}
     \BLOCK{else}

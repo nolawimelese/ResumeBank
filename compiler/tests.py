@@ -17,8 +17,9 @@ HAS_PDFLATEX = shutil.which('pdflatex') is not None
 class EscapeTests(TestCase):
     def test_latex_escape_covers_every_special(self):
         self.assertEqual(
-            services.latex_escape(r'a & b % c $ d # e _ f { g } h ~ i ^ j \ k'),
-            r'a \& b \% c \$ d \# e \_ f \{ g \} h \textasciitilde{} i \textasciicircum{} j \textbackslash{} k',
+            services.latex_escape(r'a & b % c $ d # e _ f { g } h ~ i ^ j \ k < l > m | n'),
+            r'a \& b \% c \$ d \# e \_ f \{ g \} h \textasciitilde{} i \textasciicircum{} j \textbackslash{} k'
+            r' \textless{} l \textgreater{} m \textbar{} n',
         )
 
     def test_bullet_markup_escapes_then_bolds(self):
@@ -70,6 +71,26 @@ class RenderTests(TestCase):
         self.assertIn('Jan. 2024 -- Present', tex)
         self.assertIn(r'\textbf{Other}{: C++}', tex)
         self.assertNotIn(r'\section{Projects}', tex)  # empty sections are skipped
+
+    def _add_honor(self):
+        honor = Component.objects.create(
+            category=Component.Category.HONOR, title='Deans List', start_date=date(2024, 5, 1),
+        )
+        PresetComponent.objects.create(preset=self.preset, component=honor)
+
+    def test_honors_render_under_education_not_as_a_section(self):
+        self._add_honor()
+        tex = services.render_tex(self.preset)
+        self.assertNotIn(r'\section{Honors}', tex)
+        self.assertLess(tex.index('State U'), tex.index('Deans List'))
+        self.assertLess(tex.index('Deans List'), tex.index(r'\section{Experience}'))
+
+    def test_honors_render_without_any_education(self):
+        self.edu.delete()
+        self._add_honor()
+        tex = services.render_tex(self.preset)
+        self.assertIn(r'\section{Education}', tex)
+        self.assertIn('Deans List', tex)
 
     @skipUnless(HAS_PDFLATEX, 'pdflatex not on PATH')
     def test_compile_to_history_records_resume(self):
