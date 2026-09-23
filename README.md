@@ -16,12 +16,12 @@ PDF: Jinja2 renders a `.tex` template, compiled with `pdflatex` (requires a TeX 
 
 ## Pages
 
-| URL | Page |
-|---|---|
-| `/` | Component Manager: profile, education, components + bullets, skills |
-| `/presets/` | Resumes: one row per preset, with create / clone / delete |
-| `/presets/<id>/` | Workspace: pick and order pieces on the left, the compiled PDF re-renders on the right |
-| `/compile/history/` | Every "Save to history" compile, with PDF and `.tex` downloads |
+| URL                 | Page                                                                                   |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `/`                 | Component Manager: profile, education, components + bullets, skills                    |
+| `/presets/`         | Resumes: one row per preset, with create / clone / delete                              |
+| `/presets/<id>/`    | Workspace: pick and order pieces on the left, the compiled PDF re-renders on the right |
+| `/compile/history/` | Every "Save to history" compile, with PDF and `.tex` downloads                         |
 
 ## Setup
 
@@ -61,8 +61,19 @@ python manage.py runserver
   - [x] Jake's Resume `.tex.j2` template
   - [x] Jinja2 render -> pdflatex -> pypdf page count
   - [x] Preview compile (no history row) and "Save to history" compile
-- Later
-  - [ ] Drag-and-drop ordering in the workspace
-  - [ ] Education selection per preset (currently every Education row is printed)
 
-  </details>
+- [x] Working app!
+
+</details>
+
+<details>
+
+<summary>Polishes</summary>
+
+- [ ] Header config
+- [ ] Make honors display below Education
+- [ ] Switch ordering system from numbers to arrows
+- [ ] Education selection per preset (currently every Education row is printed)
+- [ ] Add preview to component editing
+
+</details>
