@@ -242,7 +242,7 @@ def compile_preview(preset):
     out.mkdir(parents=True, exist_ok=True)
     (out / 'resume.tex').write_text(result.tex, encoding='utf-8')
     pdf_path = out / 'resume.pdf'
-    if result.ok:
+    if result.pdf is not None:
         pdf_path.write_bytes(result.pdf)
     if pdf_path.exists():
         result.pdf_url = f'{settings.MEDIA_URL}previews/{preset.pk}/resume.pdf'
@@ -255,6 +255,8 @@ def compile_to_history(preset):
     result = compile_preset(preset)
     if not result.ok:
         raise CompileError(result)
+    # compile_tex always sets these alongside ok=True; the asserts narrow the Optional types.
+    assert result.pdf is not None and result.page_count is not None
     # Atomic so a failed file write can't leave a Resume row with no files.
     with transaction.atomic():
         # Saved first so resume_upload_path has a pk to build the directory from.
