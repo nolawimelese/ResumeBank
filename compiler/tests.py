@@ -5,8 +5,10 @@ from unittest import skipUnless
 
 from django.test import TestCase, override_settings
 
-from bank.models import Bullet, Component, Coursework, Education, Profile, Skill
-from presets.models import PresetBullet, PresetComponent, PresetCoursework, PresetSkill, ResumePreset
+from bank.models import Bullet, Component, Coursework, Education, Link, Profile, Skill
+from presets.models import (
+    PresetBullet, PresetComponent, PresetCoursework, PresetLink, PresetSkill, ResumePreset,
+)
 
 from . import services
 from .models import Resume
@@ -71,6 +73,30 @@ class RenderTests(TestCase):
         self.assertIn('Jan. 2024 -- Present', tex)
         self.assertIn(r'\textbf{Other}{: C++}', tex)
         self.assertNotIn(r'\section{Projects}', tex)  # empty sections are skipped
+
+    def test_header_respects_toggles_and_link_picks(self):
+        profile = Profile.load()
+        profile.phone, profile.email, profile.location = '555-0100', 'jane@example.com', 'Atlanta, GA'
+        profile.save()
+        gh = Link.objects.create(profile=profile, link_type=Link.LinkType.GITHUB, url='https://github.com/jane', order=0)
+        li = Link.objects.create(profile=profile, link_type=Link.LinkType.LINKEDIN, url='https://linkedin.com/in/jane', order=1)
+        Link.objects.create(profile=profile, url='https://jane.dev', order=2)  # not picked
+        PresetLink.objects.create(preset=self.preset, link=li, order=0)
+        PresetLink.objects.create(preset=self.preset, link=gh, order=1)
+
+        parts = services.resolve_preset(self.preset)['header_parts']
+        self.assertEqual(parts[0], '555-0100')
+        self.assertIn('jane@example.com', parts[1])
+        # Links follow the preset's order, and unpicked links are left out.
+        self.assertIn('linkedin.com/in/jane', parts[2])
+        self.assertIn('github.com/jane', parts[3])
+        self.assertEqual(parts[4], 'Atlanta, GA')
+        self.assertEqual(len(parts), 5)
+
+        self.preset.show_phone = self.preset.show_email = self.preset.show_location = False
+        parts = services.resolve_preset(self.preset)['header_parts']
+        self.assertEqual(len(parts), 2)
+        self.assertIn('linkedin.com/in/jane', parts[0])
 
     def _add_honor(self):
         honor = Component.objects.create(

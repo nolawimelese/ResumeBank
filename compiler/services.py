@@ -109,17 +109,18 @@ def jinja_env():
     return env
 
 
-def header_parts(profile, links):
-    """The `phone | email | links | location` line, already LaTeX-escaped."""
+def header_parts(preset, profile, links):
+    """The `phone | email | links | location` line, already LaTeX-escaped.
+    Each contact field shows only if the preset's toggle is on; `links` is the preset's picks."""
     parts = []
-    if profile.phone:
+    if preset.show_phone and profile.phone:
         parts.append(latex_escape(profile.phone))
-    if profile.email:
+    if preset.show_email and profile.email:
         parts.append(f'\\href{{mailto:{profile.email}}}{{\\underline{{{latex_escape(profile.email)}}}}}')
     for link in links:
         display = _URL_SCHEME_RE.sub('', link.url).rstrip('/')
         parts.append(f'\\href{{{link.url}}}{{\\underline{{{latex_escape(display)}}}}}')
-    if profile.location:
+    if preset.show_location and profile.location:
         parts.append(latex_escape(profile.location))
     return parts
 
@@ -127,7 +128,7 @@ def header_parts(profile, links):
 def resolve_preset(preset):
     """Everything the template needs, fetched in a handful of queries."""
     profile = Profile.load()
-    links = list(profile.links.all())
+    links = [pl.link for pl in preset.preset_links.select_related('link').order_by('order', 'id')]
 
     preset_components = (
         preset.preset_components.select_related('component')
@@ -167,7 +168,7 @@ def resolve_preset(preset):
     return {
         'preset': preset,
         'profile': profile,
-        'header_parts': header_parts(profile, links),
+        'header_parts': header_parts(preset, profile, links),
         'educations': educations,
         'honors': honors,
         'sections': sections,

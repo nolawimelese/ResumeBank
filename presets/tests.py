@@ -1,9 +1,11 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from bank.models import Bullet, Component, Coursework, Education, Skill
+from bank.models import Bullet, Component, Coursework, Education, Link, Profile, Skill
 
-from .models import PresetBullet, PresetComponent, PresetCoursework, PresetSkill, ResumePreset
+from .models import (
+    PresetBullet, PresetComponent, PresetCoursework, PresetLink, PresetSkill, ResumePreset,
+)
 
 
 class WorkspaceSaveTests(TestCase):
@@ -18,6 +20,7 @@ class WorkspaceSaveTests(TestCase):
         edu = Education.objects.create(school='U', degree='BS', start_date='2023-01-01')
         self.c1 = Coursework.objects.create(education=edu, name='Algorithms', order=0)
         self.c2 = Coursework.objects.create(education=edu, name='Databases', order=1)
+        self.link = Link.objects.create(profile=Profile.load(), url='https://github.com/jane')
         self.url = reverse('presets:save', args=[self.preset.pk])
 
     def post_save(self, data, htmx=True):
@@ -68,6 +71,15 @@ class WorkspaceSaveTests(TestCase):
         self.assertEqual(self.preset.preset_skills.count(), 0)
         self.assertEqual(self.preset.preset_coursework.count(), 0)
 
+    def test_saves_header_toggles_and_link_picks(self):
+        self.post_save({'name': 'Base', 'show_email': 'on', f'link_{self.link.pk}': 'on', f'link_{self.link.pk}_order': '2'})
+        self.preset.refresh_from_db()
+        self.assertEqual((self.preset.show_phone, self.preset.show_email, self.preset.show_location), (False, True, False))
+        self.assertEqual(list(self.preset.preset_links.values_list('link_id', 'order')), [(self.link.pk, 2)])
+
+        self.post_save({'name': 'Base'})
+        self.assertFalse(self.preset.preset_links.exists())
+
     def test_unknown_ids_and_bad_orders_are_ignored(self):
         self.post_save({
             'name': 'Base', 'page_limit': 'abc',
@@ -96,7 +108,7 @@ class WorkspaceSaveTests(TestCase):
 
 class CloneTests(TestCase):
     def test_clone_copies_join_rows_not_bank_rows(self):
-        preset = ResumePreset.objects.create(name='Base', include_gpa=False, page_limit=2)
+        preset = ResumePreset.objects.create(name='Base', include_gpa=False, page_limit=2, show_phone=False)
         comp = Component.objects.create(category=Component.Category.EXPERIENCE, title='Intern')
         bullet = Bullet.objects.create(component=comp, text='x')
         skill = Skill.objects.create(name='Python')
@@ -106,17 +118,21 @@ class CloneTests(TestCase):
         PresetBullet.objects.create(preset_component=pc, bullet=bullet, order=2)
         PresetSkill.objects.create(preset=preset, skill=skill, order=3)
         PresetCoursework.objects.create(preset=preset, coursework=course, order=4)
+        link = Link.objects.create(profile=Profile.load(), url='https://github.com/jane')
+        PresetLink.objects.create(preset=preset, link=link, order=5)
 
         response = self.client.post(reverse('presets:clone', args=[preset.pk]))
         clone = ResumePreset.objects.get(name='Base (copy)')
         self.assertRedirects(response, reverse('presets:workspace', args=[clone.pk]))
         self.assertEqual((clone.include_gpa, clone.page_limit), (False, 2))
+        self.assertEqual((clone.show_phone, clone.show_email, clone.show_location), (False, True, True))
 
         new_pc = clone.preset_components.get()
         self.assertEqual((new_pc.component_id, new_pc.order), (comp.pk, 1))
         self.assertEqual(list(new_pc.preset_bullets.values_list('bullet_id', 'order')), [(bullet.pk, 2)])
         self.assertEqual(list(clone.preset_skills.values_list('skill_id', 'order')), [(skill.pk, 3)])
         self.assertEqual(list(clone.preset_coursework.values_list('coursework_id', 'order')), [(course.pk, 4)])
+        self.assertEqual(list(clone.preset_links.values_list('link_id', 'order')), [(link.pk, 5)])
         # Bank rows are shared, not duplicated.
         self.assertEqual(Component.objects.count(), 1)
         self.assertEqual(Bullet.objects.count(), 1)
@@ -134,3 +150,13 @@ class WorkspaceTests(TestCase):
         response = self.client.get(reverse('presets:workspace', args=[preset.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Deans List')
+
+    def test_workspace_renders_header_fieldset(self):
+        preset = ResumePreset.objects.create(name='Base', show_location=False)
+        link = Link.objects.create(profile=Profile.load(), url='https://github.com/jane')
+        response = self.client.get(reverse('presets:workspace', args=[preset.pk]))
+        self.assertContains(response, '<legend>Header</legend>', html=True)
+        self.assertContains(response, 'name="show_phone" checked')
+        self.assertContains(response, 'name="show_location" >')
+        # New links are opt-in: unchecked until the preset picks them.
+        self.assertContains(response, f'name="link_{link.pk}" >')

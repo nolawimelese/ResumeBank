@@ -70,7 +70,12 @@ python manage.py runserver
 
 <summary>Polishes</summary>
 
+We're gonna work top down to make sure every part of the process is straight
+
 - [ ] Header config
+  - [ ] toggles
+    - [ ] config for location, contact
+    - [ ] professional links
 - [ ] Switch ordering system from numbers to arrows
 - [ ] Education selection per preset (currently every Education row is printed)
 - [ ] Add preview to component editing

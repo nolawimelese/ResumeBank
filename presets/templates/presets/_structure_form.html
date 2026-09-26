@@ -1,6 +1,6 @@
 {% load markup %}
 {% comment %}Left pane of the workspace. Field names are what presets.views.save parses:
-comp_<id> / bullet_<id> / skill_<id> / course_<id> checkboxes and their _order siblings.{% endcomment %}
+show_* toggles, comp_<id> / bullet_<id> / skill_<id> / course_<id> / link_<id> checkboxes and their _order siblings.{% endcomment %}
 <form id="structure" method="post" action="{% url 'presets:save' preset.pk %}"
       hx-post="{% url 'presets:save' preset.pk %}"
       hx-trigger="input delay:500ms"
@@ -13,6 +13,26 @@ comp_<id> / bullet_<id> / skill_<id> / course_<id> checkboxes and their _order s
         <label>Name <input type="text" name="name" value="{{ preset.name }}" required></label>
         <label>Page limit <input type="number" class="order" name="page_limit" value="{{ preset.page_limit }}" min="1"></label>
         <label><input type="checkbox" name="include_gpa" {% if preset.include_gpa %}checked{% endif %}> GPA</label>
+    </fieldset>
+
+    <fieldset>
+        <legend>Header</legend>
+        <div class="row">
+            <span class="grow"><strong>{{ profile.name|default:"(no name)" }}</strong></span>
+            <a class="edit" href="{% url 'bank:profile' %}" target="_blank" title="Edit in the Component Manager">edit</a>
+        </div>
+        <div class="row bullet"><label class="grow"><input type="checkbox" name="show_phone" {% if preset.show_phone %}checked{% endif %}> Phone <span class="muted">{{ profile.phone|default:"(not set)" }}</span></label></div>
+        <div class="row bullet"><label class="grow"><input type="checkbox" name="show_email" {% if preset.show_email %}checked{% endif %}> Email <span class="muted">{{ profile.email|default:"(not set)" }}</span></label></div>
+        {% for l in links %}
+        <div class="row bullet">
+            <label class="grow">
+                <input type="checkbox" name="link_{{ l.link.pk }}" {% if l.checked %}checked{% endif %}>
+                {{ l.link.get_link_type_display }} <span class="muted">{{ l.link.url }}</span>
+            </label>
+            <input type="number" class="order" name="link_{{ l.link.pk }}_order" value="{{ l.order }}" min="0" title="Order among links">
+        </div>
+        {% endfor %}
+        <div class="row bullet"><label class="grow"><input type="checkbox" name="show_location" {% if preset.show_location %}checked{% endif %}> Location <span class="muted">{{ profile.location|default:"(not set)" }}</span></label></div>
     </fieldset>
 
     {% if educations %}

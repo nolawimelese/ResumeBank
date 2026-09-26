@@ -12,12 +12,12 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from bank.models import Bullet, Component, Coursework, Education, Skill
+from bank.models import Bullet, Component, Coursework, Education, Link, Profile, Skill
 from compiler.services import CATEGORY_TITLES, delete_preview
 
-from .models import PresetBullet, PresetComponent, PresetCoursework, PresetSkill, ResumePreset
+from .models import PresetBullet, PresetComponent, PresetCoursework, PresetLink, PresetSkill, ResumePreset
 
-_KEY_RE = re.compile(r'^(comp|bullet|skill|course)_(\d+)$')
+_KEY_RE = re.compile(r'^(comp|bullet|skill|course|link)_(\d+)$')
 
 
 def preset_list(request):
@@ -42,10 +42,21 @@ def workspace(request, pk):
     preset = get_object_or_404(ResumePreset, pk=pk)
     return render(request, 'presets/workspace.html', {
         'preset': preset,
+        'profile': Profile.load(),
+        'links': _header_links(preset),
         'educations': _education_groups(preset),
         'sections': _component_sections(preset),
         'skill_groups': _skill_groups(preset),
     })
+
+
+def _header_links(preset):
+    """Every Profile Link, annotated with this preset's picks and order."""
+    picked = {pl.link_id: pl.order for pl in preset.preset_links.all()}
+    return [
+        {'link': link, 'checked': link.pk in picked, 'order': picked.get(link.pk, link.order)}
+        for link in Profile.load().links.all()
+    ]
 
 
 def _education_groups(preset):
@@ -98,8 +109,9 @@ def _skill_groups(preset):
 
 
 def _parse_picks(post):
-    """{'comp': {id: order}, 'bullet': {...}, 'skill': {...}, 'course': {...}} from checked boxes and their _order siblings."""
-    picks = {'comp': {}, 'bullet': {}, 'skill': {}, 'course': {}}
+    """{'comp': {id: order}, 'bullet': {...}, 'skill': {...}, 'course': {...}, 'link': {...}}
+    from checked boxes and their _order siblings."""
+    picks = {'comp': {}, 'bullet': {}, 'skill': {}, 'course': {}, 'link': {}}
     for key in post:
         m = _KEY_RE.match(key)
         if m:
@@ -132,6 +144,9 @@ def save(request, pk):
 
     with transaction.atomic():
         preset.include_gpa = 'include_gpa' in post
+        preset.show_phone = 'show_phone' in post
+        preset.show_email = 'show_email' in post
+        preset.show_location = 'show_location' in post
         preset.page_limit = max(1, _to_int(post.get('page_limit'), preset.page_limit))
         preset.save()
         _rewrite_joins(preset, _parse_picks(post))
@@ -146,7 +161,7 @@ def save(request, pk):
 
 
 def _rewrite_joins(preset, picks):
-    """Replace the four join tables. Bullets are only kept under a component that is itself picked."""
+    """Replace the five join tables. Bullets are only kept under a component that is itself picked."""
     valid_components = set(Component.objects.filter(pk__in=picks['comp']).values_list('pk', flat=True))
     preset.preset_components.all().delete()  # cascades to PresetBullet
     preset_components = {
@@ -176,6 +191,13 @@ def _rewrite_joins(preset, picks):
         for cid, order in picks['course'].items() if cid in valid_courses
     ])
 
+    valid_links = set(Link.objects.filter(pk__in=picks['link']).values_list('pk', flat=True))
+    preset.preset_links.all().delete()
+    PresetLink.objects.bulk_create([
+        PresetLink(preset=preset, link_id=lid, order=order)
+        for lid, order in picks['link'].items() if lid in valid_links
+    ])
+
 
 @require_POST
 def clone(request, pk):
@@ -189,7 +211,8 @@ def clone(request, pk):
     with transaction.atomic():
         preset = ResumePreset.objects.create(
             name=name, template=source.template, include_gpa=source.include_gpa,
-            page_limit=source.page_limit,
+            page_limit=source.page_limit, show_phone=source.show_phone,
+            show_email=source.show_email, show_location=source.show_location,
         )
         for pc in source.preset_components.prefetch_related('preset_bullets'):
             new_pc = PresetComponent.objects.create(preset=preset, component_id=pc.component_id, order=pc.order)
@@ -204,6 +227,10 @@ def clone(request, pk):
         PresetCoursework.objects.bulk_create([
             PresetCoursework(preset=preset, coursework_id=pc.coursework_id, order=pc.order)
             for pc in source.preset_coursework.all()
+        ])
+        PresetLink.objects.bulk_create([
+            PresetLink(preset=preset, link_id=pl.link_id, order=pl.order)
+            for pl in source.preset_links.all()
         ])
     messages.success(request, f'Cloned "{source.name}" as "{preset.name}".')
     return redirect('presets:workspace', pk=preset.pk)
