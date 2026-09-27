@@ -28,7 +28,7 @@ LinkFormSet = inlineformset_factory(
 class EducationForm(forms.ModelForm):
     class Meta:
         model = Education
-        fields = ['school', 'degree', 'location', 'start_date', 'end_date', 'gpa']
+        fields = ['school', 'degree_title', 'degree', 'location', 'start_date', 'end_date', 'gpa']
         widgets = {'start_date': DateInput, 'end_date': DateInput}
 
 

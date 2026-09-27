@@ -53,10 +53,28 @@ class Link(models.Model):
 
 
 class Education(models.Model):
-    """A degree. GPA lives here rather than on Profile because it belongs to a specific degree."""
+    """
+    A degree. GPA lives here rather than on Profile because it belongs to a specific degree.
+
+    degree_title is optional; the PDF shows it abbreviated before the field of
+    study (`display_degree`, e.g. "B.S. Computer Science").
+    """
+
+    class DegreeTitle(models.TextChoices):
+        AA = 'AA', 'A.A.'
+        AS = 'AS', 'A.S.'
+        BA = 'BA', 'B.A.'
+        BS = 'BS', 'B.S.'
+        BENG = 'BEng', 'B.Eng.'
+        MA = 'MA', 'M.A.'
+        MS = 'MS', 'M.S.'
+        MENG = 'MEng', 'M.Eng.'
+        MBA = 'MBA', 'MBA'
+        PHD = 'PhD', 'Ph.D.'
 
     school = models.CharField(max_length=200)
-    degree = models.CharField(max_length=200)
+    degree_title = models.CharField(max_length=10, choices=DegreeTitle.choices, blank=True)
+    degree = models.CharField('field of study', max_length=200)
     location = models.CharField(max_length=100, blank=True)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
@@ -66,7 +84,13 @@ class Education(models.Model):
         ordering = ['-start_date']
 
     def __str__(self):
-        return f'{self.degree}, {self.school}'
+        return f'{self.display_degree}, {self.school}'
+
+    @property
+    def display_degree(self):
+        if not self.degree_title:
+            return self.degree
+        return f'{self.get_degree_title_display()} {self.degree}'
 
 
 class Coursework(models.Model):

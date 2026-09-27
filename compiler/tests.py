@@ -64,6 +64,12 @@ class RenderTests(TestCase):
         tex = services.render_tex(self.preset)
         self.assertIn(r'\textbf{Relevant Coursework}: Databases \& SQL, Algorithms}', tex)
 
+    def test_degree_title_prefixes_field_of_study(self):
+        self.edu.degree_title = Education.DegreeTitle.BS
+        self.edu.degree = 'Computer Science'
+        self.edu.save()
+        self.assertIn('B.S. Computer Science', services.render_tex(self.preset))
+
     def test_no_picked_courses_omits_the_coursework_line(self):
         tex = services.render_tex(self.preset)
         self.assertIn('State U', tex)  # a picked education renders even without courses
