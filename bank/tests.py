@@ -44,8 +44,8 @@ class ComponentTechStackTests(TestCase):
             self.assertEqual(component.tech_stack, expected, category)
 
 
-class ComponentPreviewTests(TestCase):
-    """The live preview pane is on the component editor only."""
+class EditorPreviewTests(TestCase):
+    """The live preview pane is on the component and education editors only."""
 
     def assertPreview(self, url, present):
         response = self.client.get(url)
@@ -59,7 +59,10 @@ class ComponentPreviewTests(TestCase):
         self.assertPreview(reverse('bank:component_new'), True)
         self.assertPreview(reverse('bank:component_edit', args=[component.pk]), True)
 
-    def test_other_editors_have_no_preview(self):
+    def test_education_editors_have_preview(self):
         education = Education.objects.create(school='State U', degree='BS', start_date=datetime.date(2022, 8, 1))
-        self.assertPreview(reverse('bank:education_edit', args=[education.pk]), False)
+        self.assertPreview(reverse('bank:education_new'), True)
+        self.assertPreview(reverse('bank:education_edit', args=[education.pk]), True)
+
+    def test_profile_editor_has_no_preview(self):
         self.assertPreview(reverse('bank:profile'), False)

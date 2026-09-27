@@ -1,11 +1,12 @@
 /*
- * Live preview for the Component editor: redraws the entry the way Jake's
- * template (templates/latex/jakes.tex.j2) lays it out, from the unsaved form.
- * HTML approximation only; the PDF is the source of truth for line breaks.
+ * Live preview for the Component and Education editors: redraws the entry the
+ * way Jake's template (templates/latex/jakes.tex.j2) lays it out, from the
+ * unsaved form. HTML approximation only; the PDF is the source of truth for
+ * line breaks.
  *
  * The helpers below mirror compiler/services.py (fmt_date, date_range,
- * date_or_range, bullet_markup) and the template's per-category headings.
- * Change them together.
+ * date_or_range, bullet_markup) and the template's per-category headings and
+ * Education block. Change them together.
  *
  * Also shows only the date fields the category uses (Component.SINGLE_DATE):
  * honors/certs have one date, projects hide the end date behind a link.
@@ -15,6 +16,7 @@
     var form = document.querySelector('form.edit-form');
     var sheet = document.getElementById('component-preview');
     if (!form || !sheet) return;
+    var isEducation = !!form.elements['school'];
 
     // Section headings: SECTION_TITLES; honors render nested under Education.
     var SECTION_TITLES = {
@@ -66,12 +68,13 @@
         return html;
     }
 
-    function bullets() {
+    // Inline formset rows by their text field (bullet `text`, course `name`).
+    function inlineRows(field) {
         var rows = [];
-        form.querySelectorAll('textarea[name$="-text"]').forEach(function (textarea, index) {
-            var prefix = textarea.name.slice(0, -'text'.length);
+        form.querySelectorAll('[name$="-' + field + '"]').forEach(function (input, index) {
+            var prefix = input.name.slice(0, -field.length);
             var del = form.elements[prefix + 'DELETE'];
-            var text = textarea.value.trim();
+            var text = input.value.trim();
             if (!text || (del && del.checked)) return;
             var order = parseInt(val(prefix + 'order'), 10);
             rows.push({ text: text, order: isNaN(order) ? 0 : order, index: index });
@@ -81,7 +84,27 @@
         return rows;
     }
 
+    // Education block: resumeSubheading {school}{location}{degree, GPA}{date_range},
+    // then a Relevant Coursework item. The PDF shows GPA only with the preset's
+    // include_gpa and only the courses a preset picks; here we show all of both.
+    function renderEducation() {
+        var html = '<h3 class="rs-section">Education</h3>';
+        var degree = escapeHtml(val('degree'));
+        var gpa = parseFloat(val('gpa'));
+        if (!isNaN(gpa)) degree += ', GPA: ' + gpa.toFixed(2);
+        html += row('<strong>' + escapeHtml(val('school')) + '</strong>', escapeHtml(val('location')));
+        html += row('<em>' + degree + '</em>', '<em>' + dateRange(val('start_date'), val('end_date')) + '</em>', 'rs-small');
+        var courses = inlineRows('name');
+        if (courses.length) {
+            html += '<ul class="rs-bullets"><li><strong>Relevant Coursework</strong>: ' + courses.map(function (c) {
+                return escapeHtml(c.text);
+            }).join(', ') + '</li></ul>';
+        }
+        sheet.innerHTML = html;
+    }
+
     function render() {
+        if (isEducation) return renderEducation();
         var category = val('category');
         var title = val('title');
         var org = val('organization');
@@ -96,7 +119,7 @@
             html += row('<em>' + escapeHtml(org) + '</em>', '<em>' + escapeHtml(val('location')) + '</em>', 'rs-small');
         }
 
-        var items = bullets();
+        var items = inlineRows('text');
         if (items.length) {
             html += '<ul class="rs-bullets">' + items.map(function (b) {
                 return '<li>' + bulletHtml(b.text) + '</li>';
@@ -112,6 +135,7 @@
     var endExpanded = false;
 
     function syncFields() {
+        if (isEducation) return;
         var category = val('category');
         var project = category === 'project';
         if (techRow) {

@@ -39,7 +39,8 @@ def _edit(request, form_cls, formset_cls, instance, title, inline_title, delete_
 
     usage_accessor names the reverse join accessor on the inline rows (e.g.
     'presetbullet_set') so the template can warn before a row is deleted.
-    preview adds the live resume-entry pane (static/js/component_preview.js)."""
+    preview adds the live resume-entry pane (static/js/component_preview.js);
+    the component and education editors use it."""
     if request.method == 'POST':
         form = form_cls(request.POST, instance=instance)
         formset = formset_cls(request.POST, instance=instance)
@@ -70,13 +71,13 @@ def profile(request):
 # ---- Education ----
 
 def education_new(request):
-    return _edit(request, EducationForm, CourseworkFormSet, Education(), 'New education', 'Coursework')
+    return _edit(request, EducationForm, CourseworkFormSet, Education(), 'New education', 'Coursework', preview=True)
 
 
 def education_edit(request, pk):
     edu = get_object_or_404(Education, pk=pk)
     return _edit(request, EducationForm, CourseworkFormSet, edu, str(edu), 'Coursework',
-                 delete_url=reverse('bank:education_delete', args=[pk]))
+                 delete_url=reverse('bank:education_delete', args=[pk]), preview=True)
 
 
 def education_delete(request, pk):
