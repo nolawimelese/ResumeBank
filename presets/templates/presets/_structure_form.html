@@ -1,6 +1,9 @@
 {% load markup %}
 {% comment %}Left pane of the workspace. Field names are what presets.views.save parses:
-show_* toggles, comp_<id> / bullet_<id> / skill_<id> / course_<id> / link_<id> checkboxes and their _order siblings.{% endcomment %}
+show_* toggles, comp_<id> / bullet_<id> / skill_<id> / course_<id> / link_<id> checkboxes and their hidden _order siblings.
+Each reorderable list is a .sortable of .sort-item children; an item's own input.pos (a direct child) holds its position,
+which the ↑/↓ handler in base.html renumbers after every move. Rows arrive picked-first from the view and the
+script keeps them grouped that way; arrows are enabled/hidden by script, not here.{% endcomment %}
 <form id="structure" method="post" action="{% url 'presets:save' preset.pk %}"
       hx-post="{% url 'presets:save' preset.pk %}"
       hx-trigger="input delay:500ms"
@@ -23,15 +26,18 @@ show_* toggles, comp_<id> / bullet_<id> / skill_<id> / course_<id> / link_<id> c
         </div>
         <div class="row bullet"><label class="grow"><input type="checkbox" name="show_phone" {% if preset.show_phone %}checked{% endif %}> Phone <span class="muted">{{ profile.phone|default:"(not set)" }}</span></label></div>
         <div class="row bullet"><label class="grow"><input type="checkbox" name="show_email" {% if preset.show_email %}checked{% endif %}> Email <span class="muted">{{ profile.email|default:"(not set)" }}</span></label></div>
+        <div class="sortable">
         {% for l in links %}
-        <div class="row bullet">
+        <div class="row bullet sort-item">
             <label class="grow">
                 <input type="checkbox" name="link_{{ l.link.pk }}" {% if l.checked %}checked{% endif %}>
                 {{ l.link.get_link_type_display }} <span class="muted">{{ l.link.url }}</span>
             </label>
-            <input type="number" class="order" name="link_{{ l.link.pk }}_order" value="{{ l.order }}" min="0" title="Order among links">
+            <input type="hidden" class="pos" name="link_{{ l.link.pk }}_order" value="{{ forloop.counter0 }}">
+            <button type="button" class="move" data-dir="up" title="Move up">&uarr;</button><button type="button" class="move" data-dir="down" title="Move down">&darr;</button>
         </div>
         {% endfor %}
+        </div>
         <div class="row bullet"><label class="grow"><input type="checkbox" name="show_location" {% if preset.show_location %}checked{% endif %}> Location <span class="muted">{{ profile.location|default:"(not set)" }}</span></label></div>
     </fieldset>
 
@@ -47,17 +53,20 @@ show_* toggles, comp_<id> / bullet_<id> / skill_<id> / course_<id> / link_<id> c
                 </span>
                 <a class="edit" href="{% url 'bank:education_edit' g.education.pk %}" target="_blank" title="Edit in the Component Manager">edit</a>
             </div>
+            <div class="sortable">
             {% for c in g.entries %}
-            <div class="row bullet">
+            <div class="row bullet sort-item">
                 <label class="grow">
                     <input type="checkbox" name="course_{{ c.course.pk }}" {% if c.checked %}checked{% endif %}>
                     {{ c.course.name }}
                 </label>
-                <input type="number" class="order" name="course_{{ c.course.pk }}_order" value="{{ c.order }}" min="0" title="Order within coursework line">
+                <input type="hidden" class="pos" name="course_{{ c.course.pk }}_order" value="{{ forloop.counter0 }}">
+                <button type="button" class="move" data-dir="up" title="Move up">&uarr;</button><button type="button" class="move" data-dir="down" title="Move down">&darr;</button>
             </div>
             {% empty %}
             <p class="row bullet muted">No coursework entered for this degree.</p>
             {% endfor %}
+            </div>
         </div>
         {% endfor %}
     </fieldset>
@@ -66,28 +75,34 @@ show_* toggles, comp_<id> / bullet_<id> / skill_<id> / course_<id> / link_<id> c
     {% for section in sections %}
     <fieldset>
         <legend>{{ section.label }}</legend>
+        <div class="sortable">
         {% for e in section.entries %}
-        <div class="comp-block{% if not e.checked %} off{% endif %}">
+        <div class="comp-block sort-item{% if not e.checked %} off{% endif %}">
+            <input type="hidden" class="pos" name="comp_{{ e.component.pk }}_order" value="{{ forloop.counter0 }}">
             <div class="row">
                 <label class="grow">
                     <input type="checkbox" class="comp-toggle" name="comp_{{ e.component.pk }}" {% if e.checked %}checked{% endif %}>
                     <strong>{{ e.component.title }}</strong>
                     {% if e.component.organization %}<span class="muted">&middot; {{ e.component.organization }}</span>{% endif %}
                 </label>
-                <input type="number" class="order" name="comp_{{ e.component.pk }}_order" value="{{ e.order }}" min="0" title="Order within section">
+                <button type="button" class="move" data-dir="up" title="Move up">&uarr;</button><button type="button" class="move" data-dir="down" title="Move down">&darr;</button>
                 <a class="edit" href="{% url 'bank:component_edit' e.component.pk %}" target="_blank" title="Edit in the Component Manager">edit</a>
             </div>
+            <div class="sortable">
             {% for b in e.bullets %}
-            <div class="row bullet">
+            <div class="row bullet sort-item">
                 <label class="grow">
                     <input type="checkbox" name="bullet_{{ b.bullet.pk }}" {% if b.checked %}checked{% endif %}{% if not e.checked %} disabled{% endif %}>
                     {{ b.bullet.text|bold }}
                 </label>
-                <input type="number" class="order" name="bullet_{{ b.bullet.pk }}_order" value="{{ b.order }}" min="0" title="Order within component"{% if not e.checked %} disabled{% endif %}>
+                <input type="hidden" class="pos" name="bullet_{{ b.bullet.pk }}_order" value="{{ forloop.counter0 }}"{% if not e.checked %} disabled{% endif %}>
+                <button type="button" class="move" data-dir="up" title="Move up">&uarr;</button><button type="button" class="move" data-dir="down" title="Move down">&darr;</button>
             </div>
             {% endfor %}
+            </div>
         </div>
         {% endfor %}
+        </div>
     </fieldset>
     {% empty %}
     <p class="muted">The bank has no components yet. <a href="{% url 'bank:index' %}">Add some in the Component Manager.</a></p>
@@ -98,15 +113,18 @@ show_* toggles, comp_<id> / bullet_<id> / skill_<id> / course_<id> / link_<id> c
         <legend>Skills</legend>
         {% for g in skill_groups %}
         <h4>{{ g.label }}</h4>
+        <div class="sortable">
         {% for s in g.entries %}
-        <div class="row">
+        <div class="row sort-item">
             <label class="grow">
                 <input type="checkbox" name="skill_{{ s.skill.pk }}" {% if s.checked %}checked{% endif %}>
                 {{ s.skill.name }}
             </label>
-            <input type="number" class="order" name="skill_{{ s.skill.pk }}_order" value="{{ s.order }}" min="0" title="Order within group">
+            <input type="hidden" class="pos" name="skill_{{ s.skill.pk }}_order" value="{{ forloop.counter0 }}">
+            <button type="button" class="move" data-dir="up" title="Move up">&uarr;</button><button type="button" class="move" data-dir="down" title="Move down">&darr;</button>
         </div>
         {% endfor %}
+        </div>
         {% endfor %}
     </fieldset>
     {% endif %}

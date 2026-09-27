@@ -160,3 +160,29 @@ class WorkspaceTests(TestCase):
         self.assertContains(response, 'name="show_location" >')
         # New links are opt-in: unchecked until the preset picks them.
         self.assertContains(response, f'name="link_{link.pk}" >')
+
+    def test_picked_rows_come_first_in_preset_order(self):
+        preset = ResumePreset.objects.create(name='Base')
+        a, b, c = (
+            Component.objects.create(category=Component.Category.PROJECT, title=t) for t in ('A', 'B', 'C')
+        )
+        b1 = Bullet.objects.create(component=c, text='one', order=0)
+        b2 = Bullet.objects.create(component=c, text='two', order=1)
+        b3 = Bullet.objects.create(component=c, text='three', order=2)
+        s1, s2, s3 = (Skill.objects.create(name=n, order=i) for i, n in enumerate(('Go', 'Rust', 'C')))
+        pc = PresetComponent.objects.create(preset=preset, component=c, order=0)
+        PresetComponent.objects.create(preset=preset, component=b, order=1)
+        PresetBullet.objects.create(preset_component=pc, bullet=b3, order=0)
+        PresetBullet.objects.create(preset_component=pc, bullet=b1, order=1)
+        PresetSkill.objects.create(preset=preset, skill=s3, order=0)
+
+        response = self.client.get(reverse('presets:workspace', args=[preset.pk]))
+        (projects,) = response.context['sections']
+        self.assertEqual([e['component'] for e in projects['entries']], [c, b, a])
+        self.assertEqual([x['bullet'] for x in projects['entries'][0]['bullets']], [b3, b1, b2])
+        (languages,) = response.context['skill_groups']
+        self.assertEqual([x['skill'] for x in languages['entries']], [s3, s1, s2])
+        # Positions render from the display order, as hidden inputs rather than number fields.
+        self.assertContains(response, f'type="hidden" class="pos" name="comp_{a.pk}_order" value="2"')
+        self.assertContains(response, f'type="hidden" class="pos" name="bullet_{b2.pk}_order" value="2"')
+        self.assertContains(response, 'type="number"', count=1)  # only page_limit

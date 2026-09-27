@@ -2,7 +2,7 @@
 Preset pages. The workspace is the Overleaf-style page: structure form on the
 left (auto-saved through `save`), live PDF on the right (served by
 compiler.views.preview). Section order is fixed by the LaTeX template, so the
-form only lets the user pick rows and order them within a section.
+form only lets the user pick rows and order them (↑/↓ arrows) within a section.
 """
 import re
 
@@ -53,10 +53,10 @@ def workspace(request, pk):
 def _header_links(preset):
     """Every Profile Link, annotated with this preset's picks and order."""
     picked = {pl.link_id: pl.order for pl in preset.preset_links.all()}
-    return [
+    return _picked_first([
         {'link': link, 'checked': link.pk in picked, 'order': picked.get(link.pk, link.order)}
         for link in Profile.load().links.all()
-    ]
+    ])
 
 
 def _education_groups(preset):
@@ -65,10 +65,10 @@ def _education_groups(preset):
     return [
         {
             'education': edu,
-            'entries': [
+            'entries': _picked_first([
                 {'course': c, 'checked': c.pk in picked, 'order': picked.get(c.pk, c.order)}
                 for c in edu.coursework.all()
-            ],
+            ]),
         }
         for edu in Education.objects.prefetch_related('coursework')
     ]
@@ -85,13 +85,13 @@ def _component_sections(preset):
             'component': component,
             'checked': pc is not None,
             'order': pc.order if pc else 0,
-            'bullets': [
+            'bullets': _picked_first([
                 {'bullet': b, 'checked': b.pk in bullet_picks, 'order': bullet_picks.get(b.pk, b.order)}
                 for b in component.bullets.all()
-            ],
+            ]),
         })
     return [
-        {'label': CATEGORY_TITLES[cat], 'entries': entries}
+        {'label': CATEGORY_TITLES[cat], 'entries': _picked_first(entries)}
         for cat, entries in by_category.items() if entries
     ]
 
@@ -105,7 +105,13 @@ def _skill_groups(preset):
             'checked': skill.pk in picked,
             'order': picked.get(skill.pk, skill.order),
         })
-    return [{'label': g.label, 'entries': entries} for g, entries in by_group.items() if entries]
+    return [{'label': g.label, 'entries': _picked_first(entries)} for g, entries in by_group.items() if entries]
+
+
+def _picked_first(entries):
+    """Picked rows first in preset order, then unpicked rows in bank order (the sort is stable).
+    The form's ↑/↓ arrows then work on positions, rendered from the loop index."""
+    return sorted(entries, key=lambda e: (not e['checked'], e['order'] if e['checked'] else 0))
 
 
 def _parse_picks(post):

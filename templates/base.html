@@ -21,15 +21,58 @@
         {% block content %}{% endblock %}
     </main>
     <script>
-        // Dim and disable a component's bullets in the workspace when the component's own
-        // checkbox (input.comp-toggle, never a bullet or course row) is unchecked. Disabled
-        // inputs are not submitted; the server drops orphan bullets regardless.
+        // Workspace ordering. Each list is a .sortable of .sort-item children; an item's own
+        // input.pos (a direct child) is its saved position. Only picked rows are stored, so picked
+        // rows stay grouped at the top and only they get ↑/↓ arrows, which swap among picked rows.
+        // (:scope > keeps a component's arrows/position apart from its bullets'.)
+        function sortItems(list) { return Array.from(list.querySelectorAll(':scope > .sort-item')); }
+        function isPicked(item) {
+            var cb = item.querySelector('input[type=checkbox]');  // a comp-block's first box is its comp-toggle
+            return cb.checked && !cb.disabled;                   // bullets under an unchecked component don't count
+        }
+        function refreshList(list) {
+            var items = sortItems(list);
+            var picked = items.filter(isPicked).length;
+            items.forEach(function (it, i) {
+                it.querySelector(':scope > input.pos').value = i;
+                it.classList.toggle('unpicked', i >= picked);
+                it.querySelectorAll(':scope > .move, :scope > .row > .move').forEach(function (b) {
+                    b.disabled = i >= picked || (b.dataset.dir === 'up' ? i === 0 : i === picked - 1);
+                });
+            });
+        }
+        document.querySelectorAll('.sortable').forEach(refreshList);
+
         document.addEventListener('change', function (e) {
+            if (e.target.type !== 'checkbox') return;
+            var item = e.target.closest('.sort-item');
+            if (!item || item.querySelector('input[type=checkbox]') !== e.target) return;
+            // Dim and disable a component's bullets when its own box is unchecked. Disabled
+            // inputs are not submitted; the server drops orphan bullets regardless.
             if (e.target.matches('input.comp-toggle')) {
-                var block = e.target.closest('.comp-block');
-                block.classList.toggle('off', !e.target.checked);
-                block.querySelectorAll('.row.bullet input').forEach(function (i) { i.disabled = !e.target.checked; });
+                item.classList.toggle('off', !e.target.checked);
+                item.querySelectorAll('.row.bullet input').forEach(function (i) { i.disabled = !e.target.checked; });
+                item.querySelectorAll('.sortable').forEach(refreshList);
             }
+            // Ticking puts the row at the end of the picked group; unticking at the top of the rest.
+            // The checkbox's own `input` event already queued the save, which reads these values when it fires.
+            var list = item.parentNode;
+            var boundary = sortItems(list).find(function (it) { return it !== item && !isPicked(it); });
+            list.insertBefore(item, boundary || null);
+            refreshList(list);
+        });
+
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('button.move');
+            if (!btn) return;
+            var item = btn.closest('.sort-item');
+            var up = btn.dataset.dir === 'up';
+            var other = up ? item.previousElementSibling : item.nextElementSibling;
+            if (!other || !other.matches('.sort-item') || !isPicked(other)) return;
+            item.parentNode.insertBefore(item, up ? other : other.nextElementSibling);
+            refreshList(item.parentNode);
+            if (!btn.disabled) btn.focus();  // moving the node can drop focus; keep repeated clicks easy
+            item.querySelector(':scope > input.pos').dispatchEvent(new Event('input', {bubbles: true}));
         });
     </script>
 </body>

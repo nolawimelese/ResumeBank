@@ -72,13 +72,14 @@ python manage.py runserver
 
 We're gonna work top down to make sure every part of the process is straight
 
-- [ ] Header config
-  - [ ] toggles
-    - [ ] config for location, contact
-    - [ ] professional links
-- [ ] Switch ordering system from numbers to arrows
+- [x] Header config
+  - [x] toggles
+    - [x] config for location, contact
+    - [x] professional links
+- [x] Switch ordering system from numbers to arrows
 - [ ] Education selection per preset (currently every Education row is printed)
 - [ ] Add preview to component editing
+- [ ] Add checkbox for "in progress" certifications
 
 on hold
 

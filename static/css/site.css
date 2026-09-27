@@ -52,6 +52,11 @@ body.workspace-page main { flex: 1; min-height: 0; display: flex; flex-direction
 .comp-block { margin-bottom: .5rem; }
 .comp-block.off .row.bullet { opacity: .45; cursor: not-allowed; }
 input.order { width: 3.5rem; }
+button.move { padding: 0 .3rem; font-size: .8rem; line-height: 1.3; color: var(--muted); background: none; border: 1px solid var(--border); cursor: pointer; }
+button.move + button.move { margin-left: -.35rem; }
+button.move:hover:not(:disabled) { color: inherit; }
+button.move:disabled { opacity: .3; cursor: default; }
+.sort-item.unpicked > .move, .sort-item.unpicked > .row > .move { visibility: hidden; }
 a.edit { font-size: .8rem; color: var(--muted); }
 
 /* htmx default indicator styles are injected by htmx itself; make ours a little louder. */
