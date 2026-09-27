@@ -127,7 +127,7 @@
       {\textbf{\VAR{c.title|latex}}\BLOCK{if c.tech_stack } $|$ \emph{\VAR{c.tech_stack|latex}}\BLOCK{endif}}{\VAR{c.start_date|date_or_range(c.end_date)}}
     \BLOCK{elif section.category == 'certification' }
     \resumeProjectHeading
-      {\textbf{\VAR{c.title|latex}}\BLOCK{if c.organization } $|$ \emph{\VAR{c.organization|latex}}\BLOCK{endif}}{\VAR{c.start_date|date}}
+      {\textbf{\VAR{c.title|latex}}\BLOCK{if c.organization } $|$ \emph{\VAR{c.organization|latex}}\BLOCK{endif}}{\BLOCK{if c.in_progress }In Progress\BLOCK{else}\VAR{c.start_date|date}\BLOCK{endif}}
     \BLOCK{else}
     \resumeSubheading
       {\VAR{c.title|latex}}{\VAR{c.start_date|date_range(c.end_date)}}

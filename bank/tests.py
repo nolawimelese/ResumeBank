@@ -44,6 +44,17 @@ class ComponentTechStackTests(TestCase):
             self.assertEqual(component.tech_stack, expected, category)
 
 
+class ComponentInProgressTests(TestCase):
+    def test_only_certifications_keep_in_progress(self):
+        for category, _ in Component.Category.choices:
+            component = Component.objects.create(
+                category=category, title='X', start_date=datetime.date(2026, 12, 1), in_progress=True,
+            )
+            component.refresh_from_db()
+            self.assertEqual(component.in_progress, category == Component.Category.CERTIFICATION, category)
+            self.assertEqual(component.start_date, datetime.date(2026, 12, 1))  # date is kept either way
+
+
 class EditorPreviewTests(TestCase):
     """The live preview pane is on the component and education editors only."""
 

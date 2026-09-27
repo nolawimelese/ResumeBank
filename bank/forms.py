@@ -40,7 +40,7 @@ CourseworkFormSet = inlineformset_factory(
 class ComponentForm(forms.ModelForm):
     class Meta:
         model = Component
-        fields = ['category', 'title', 'organization', 'location', 'start_date', 'end_date', 'tech_stack']
+        fields = ['category', 'title', 'organization', 'location', 'start_date', 'in_progress', 'end_date', 'tech_stack']
         widgets = {
             'start_date': DateInput,
             'end_date': DateInput,
@@ -49,6 +49,7 @@ class ComponentForm(forms.ModelForm):
         }
         help_texts = {
             'start_date': 'Projects, honors and certifications: the single date goes here.',
+            'in_progress': 'Shows "In Progress" instead of the date.',
             'end_date': 'Blank means "Present"; for projects, blank shows just the date.',
             'tech_stack': 'Rendered as "Name | Tech".',
         }

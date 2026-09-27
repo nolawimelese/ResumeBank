@@ -130,6 +130,19 @@ class RenderTests(TestCase):
         project.save()
         self.assertIn('{Oct. 2024 -- Nov. 2024}', services.render_tex(self.preset))
 
+    def test_in_progress_certification_replaces_its_date(self):
+        cert = Component.objects.create(
+            category=Component.Category.CERTIFICATION, title='AWS SAA',
+            start_date=date(2026, 12, 1), in_progress=True,
+        )
+        PresetComponent.objects.create(preset=self.preset, component=cert)
+        tex = services.render_tex(self.preset)
+        self.assertIn('{In Progress}', tex)
+        self.assertNotIn('Dec. 2026', tex)
+        cert.in_progress = False
+        cert.save()
+        self.assertIn('{Dec. 2026}', services.render_tex(self.preset))
+
     def _add_honor(self):
         honor = Component.objects.create(
             category=Component.Category.HONOR, title='Deans List', start_date=date(2024, 5, 1),

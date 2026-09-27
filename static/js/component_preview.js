@@ -10,7 +10,8 @@
  *
  * Also shows only the date fields the category uses (Component.SINGLE_DATE):
  * honors/certs have one date, projects hide the end date behind a link.
- * Tech stack is projects-only (Component.save() clears it otherwise).
+ * Tech stack is projects-only (Component.save() clears it otherwise), and so
+ * is In progress for certifications; ticking it hides (but keeps) the date.
  */
 (function () {
     var form = document.querySelector('form.edit-form');
@@ -56,6 +57,11 @@
     function val(name) {
         var el = form.elements[name];
         return el ? el.value.trim() : '';
+    }
+
+    function checked(name) {
+        var el = form.elements[name];
+        return !!(el && el.checked);
     }
 
     function row(left, right, cls) {
@@ -113,7 +119,8 @@
         if (category === 'project') {
             html += row(titleWith(title, val('tech_stack')), dateOrRange(val('start_date'), val('end_date')), 'rs-small');
         } else if (category === 'certification' || category === 'honor') {
-            html += row(titleWith(title, org), fmtDate(val('start_date')), 'rs-small');
+            var when = category === 'certification' && checked('in_progress') ? 'In Progress' : fmtDate(val('start_date'));
+            html += row(titleWith(title, org), when, 'rs-small');
         } else {
             html += row('<strong>' + escapeHtml(title) + '</strong>', dateRange(val('start_date'), val('end_date')));
             html += row('<em>' + escapeHtml(org) + '</em>', '<em>' + escapeHtml(val('location')) + '</em>', 'rs-small');
@@ -131,6 +138,7 @@
     var startRow = form.querySelector('[data-field="start_date"]');
     var endRow = form.querySelector('[data-field="end_date"]');
     var techRow = form.querySelector('[data-field="tech_stack"]');
+    var progressRow = form.querySelector('[data-field="in_progress"]');
     var addEnd = document.getElementById('add-end-date');
     var endExpanded = false;
 
@@ -142,7 +150,13 @@
             if (!project) form.elements['tech_stack'].value = '';
             techRow.hidden = !project;
         }
+        var cert = category === 'certification';
+        if (progressRow) {
+            if (!cert) form.elements['in_progress'].checked = false;
+            progressRow.hidden = !cert;
+        }
         if (!startRow || !endRow) return;
+        startRow.hidden = cert && checked('in_progress');
         var single = category === 'honor' || category === 'certification';
         if (single) form.elements['end_date'].value = '';
         var showEnd = !single && (!project || endExpanded || val('end_date') !== '');
@@ -162,7 +176,7 @@
 
     form.addEventListener('input', render);
     form.addEventListener('change', function (e) {
-        if (e.target.name === 'category') syncFields();
+        if (e.target.name === 'category' || e.target.name === 'in_progress') syncFields();
         render();
     });
     syncFields();

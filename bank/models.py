@@ -90,7 +90,9 @@ class Component(models.Model):
     start_date (save() clears end_date). A Project shows start_date alone
     unless it has an end_date, then a range. For Experience and Leadership a
     null end_date means "Present". tech_stack is projects-only (save() clears
-    it for other categories).
+    it for other categories). in_progress is certifications-only (save()
+    clears it otherwise): the PDF shows "In Progress" instead of the date,
+    which is kept for when the cert is finished.
     """
 
     class Category(models.TextChoices):
@@ -111,6 +113,8 @@ class Component(models.Model):
     end_date = models.DateField(null=True, blank=True)
     # Projects only; rendered as the "Name | Tech" line.
     tech_stack = models.CharField(max_length=200, blank=True)
+    # Certifications only; rendered as "In Progress" in place of the date.
+    in_progress = models.BooleanField(default=False)
 
     SINGLE_DATE = {Category.HONOR, Category.CERTIFICATION}
 
@@ -122,6 +126,8 @@ class Component(models.Model):
             self.end_date = None
         if self.category != self.Category.PROJECT:
             self.tech_stack = ''
+        if self.category != self.Category.CERTIFICATION:
+            self.in_progress = False
         super().save(*args, **kwargs)
 
     def __str__(self):
