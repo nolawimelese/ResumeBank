@@ -78,7 +78,7 @@ We're gonna work top down to make sure every part of the process is straight
     - [x] professional links
 - [x] Switch ordering system from numbers to arrows
 - [x] Education selection per preset
-- [ ] Add preview to component editing
+- [x] Add preview to component editing
 - [ ] Add checkbox for "in progress" certifications
 
 on hold

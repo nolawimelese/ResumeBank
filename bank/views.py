@@ -33,11 +33,13 @@ def index(request):
     })
 
 
-def _edit(request, form_cls, formset_cls, instance, title, inline_title, delete_url=None, usage_accessor=None):
+def _edit(request, form_cls, formset_cls, instance, title, inline_title, delete_url=None, usage_accessor=None,
+          preview=False):
     """Shared save loop for a ModelForm plus its one-level inline formset.
 
     usage_accessor names the reverse join accessor on the inline rows (e.g.
-    'presetbullet_set') so the template can warn before a row is deleted."""
+    'presetbullet_set') so the template can warn before a row is deleted.
+    preview adds the live resume-entry pane (static/js/component_preview.js)."""
     if request.method == 'POST':
         form = form_cls(request.POST, instance=instance)
         formset = formset_cls(request.POST, instance=instance)
@@ -55,6 +57,7 @@ def _edit(request, form_cls, formset_cls, instance, title, inline_title, delete_
         f.uses = getattr(f.instance, usage_accessor).count() if usage_accessor and f.instance.pk else 0
     return render(request, 'bank/edit.html', {
         'form': form, 'formset': formset, 'title': title, 'inline_title': inline_title, 'delete_url': delete_url,
+        'preview': preview,
     })
 
 
@@ -89,13 +92,13 @@ def education_delete(request, pk):
 
 def component_new(request):
     initial = Component(category=request.GET.get('category', Component.Category.EXPERIENCE))
-    return _edit(request, ComponentForm, BulletFormSet, initial, 'New component', 'Bullets')
+    return _edit(request, ComponentForm, BulletFormSet, initial, 'New component', 'Bullets', preview=True)
 
 
 def component_edit(request, pk):
     component = get_object_or_404(Component, pk=pk)
     return _edit(request, ComponentForm, BulletFormSet, component, str(component), 'Bullets',
-                 delete_url=reverse('bank:component_delete', args=[pk]), usage_accessor='presetbullet_set')
+                 delete_url=reverse('bank:component_delete', args=[pk]), usage_accessor='presetbullet_set', preview=True)
 
 
 def component_delete(request, pk):

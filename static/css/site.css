@@ -61,3 +61,22 @@ a.edit { font-size: .8rem; color: var(--muted); }
 
 /* htmx default indicator styles are injected by htmx itself; make ours a little louder. */
 #compiling { color: var(--muted); font-style: italic; }
+
+/* ---------- Component editor: form + live resume-entry preview ---------- */
+body.editor-page { max-width: 110rem; }
+.editor { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem; align-items: start; }
+.component-preview { position: sticky; top: 1rem; max-width: 100%; overflow-x: auto; }
+@media (max-width: 80rem) { .editor { grid-template-columns: minmax(0, 1fr); } }
+
+/* Approximates Jake's template: 7.5in text width, 11pt Computer Modern. */
+.resume-sheet {
+    width: 7.5in; box-sizing: content-box; padding: .5in .5in .4in; margin-bottom: .35rem;
+    background: #fff; color: #000; border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0, 0, 0, .12);
+    font-family: "Latin Modern Roman", "CMU Serif", "Computer Modern", Georgia, "Times New Roman", serif;
+    font-size: 11pt; line-height: 1.2;
+}
+.resume-sheet .rs-section { font-size: 12pt; font-weight: normal; font-variant: small-caps; margin: 0 0 .35em; padding-bottom: 1px; border-bottom: .5pt solid #000; }
+.resume-sheet .rs-row { display: flex; justify-content: space-between; gap: 1em; margin-left: .15in; }
+.resume-sheet .rs-small { font-size: 10pt; }
+.resume-sheet .rs-bullets { margin: .2em 0 0 .15in; padding-left: .25in; font-size: 10pt; }
+.resume-sheet .rs-bullets li { margin-bottom: .1em; }

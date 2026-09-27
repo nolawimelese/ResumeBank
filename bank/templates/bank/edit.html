@@ -1,9 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ title }}{% endblock %}
+{% block body_class %}{% if preview %}editor-page{% endif %}{% endblock %}
 
 {% block content %}
 <h1>{{ title }}</h1>
+{% if preview %}<div class="editor">{% endif %}
 <form method="post" class="edit-form">
     {% csrf_token %}
     {{ form.non_field_errors }}
@@ -43,4 +46,12 @@
         {% if delete_url %}&middot; <a class="badge over" href="{{ delete_url }}">Delete</a>{% endif %}
     </p>
 </form>
+{% if preview %}
+<aside class="component-preview">
+    <div id="component-preview" class="resume-sheet"></div>
+    <small class="muted">Approximate &mdash; exact line breaks come from the PDF.</small>
+</aside>
+</div>
+<script src="{% static 'js/component_preview.js' %}" defer></script>
+{% endif %}
 {% endblock %}
