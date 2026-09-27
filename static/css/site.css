@@ -68,7 +68,12 @@ body.editor-page { max-width: 110rem; }
 .component-preview { position: sticky; top: 1rem; max-width: 100%; overflow-x: auto; }
 @media (max-width: 80rem) { .editor { grid-template-columns: minmax(0, 1fr); } }
 
-/* Approximates Jake's template: 7.5in text width, 11pt Computer Modern. */
+/* Latin Modern, pdflatex's Computer Modern, served locally so browser line wraps match the PDF. */
+@font-face { font-family: "Latin Modern Roman"; src: url("../fonts/lmroman10-regular.otf") format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Latin Modern Roman"; src: url("../fonts/lmroman10-bold.otf") format("opentype"); font-weight: bold; font-style: normal; }
+@font-face { font-family: "Latin Modern Roman"; src: url("../fonts/lmroman10-italic.otf") format("opentype"); font-weight: normal; font-style: italic; }
+
+/* Approximates Jake's template: 7.5in text width, 11pt Latin Modern. */
 .resume-sheet {
     width: 7.5in; box-sizing: content-box; padding: .5in .5in .4in; margin-bottom: .35rem;
     background: #fff; color: #000; border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0, 0, 0, .12);
@@ -78,5 +83,5 @@ body.editor-page { max-width: 110rem; }
 .resume-sheet .rs-section { font-size: 12pt; font-weight: normal; font-variant: small-caps; margin: 0 0 .35em; padding-bottom: 1px; border-bottom: .5pt solid #000; }
 .resume-sheet .rs-row { display: flex; justify-content: space-between; gap: 1em; margin-left: .15in; }
 .resume-sheet .rs-small { font-size: 10pt; }
-.resume-sheet .rs-bullets { margin: .2em 0 0 .15in; padding-left: .25in; font-size: 10pt; }
+.resume-sheet .rs-bullets { margin: .2em 0 0 .15in; padding-left: 24.2pt; font-size: 10pt; }  /* LaTeX's \leftmarginii: 2.2em at 11pt */
 .resume-sheet .rs-bullets li { margin-bottom: .1em; }
