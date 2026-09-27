@@ -44,6 +44,8 @@ class ComponentForm(forms.ModelForm):
         widgets = {
             'start_date': DateInput,
             'end_date': DateInput,
+            # Room for a full one-line "Name | Tech" heading's worth of tech.
+            'tech_stack': forms.TextInput(attrs={'size': 70, 'style': 'max-width: 100%'}),
         }
         help_texts = {
             'start_date': 'Projects, honors and certifications: the single date goes here.',
