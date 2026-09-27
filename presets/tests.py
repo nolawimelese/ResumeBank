@@ -4,7 +4,7 @@ from django.urls import reverse
 from bank.models import Bullet, Component, Coursework, Education, Link, Profile, Skill
 
 from .models import (
-    PresetBullet, PresetComponent, PresetCoursework, PresetLink, PresetSkill, ResumePreset,
+    PresetBullet, PresetComponent, PresetCoursework, PresetEducation, PresetLink, PresetSkill, ResumePreset,
 )
 
 
@@ -17,9 +17,11 @@ class WorkspaceSaveTests(TestCase):
         self.proj = Component.objects.create(category=Component.Category.PROJECT, title='Proj')
         self.orphan = Bullet.objects.create(component=self.proj, text='orphan', order=0)
         self.skill = Skill.objects.create(group=Skill.Group.LANGUAGES, name='Python')
-        edu = Education.objects.create(school='U', degree='BS', start_date='2023-01-01')
-        self.c1 = Coursework.objects.create(education=edu, name='Algorithms', order=0)
-        self.c2 = Coursework.objects.create(education=edu, name='Databases', order=1)
+        self.edu = Education.objects.create(school='U', degree='BS', start_date='2023-01-01')
+        self.edu2 = Education.objects.create(school='V', degree='MS', start_date='2025-01-01')
+        self.c1 = Coursework.objects.create(education=self.edu, name='Algorithms', order=0)
+        self.c2 = Coursework.objects.create(education=self.edu, name='Databases', order=1)
+        self.c3 = Coursework.objects.create(education=self.edu2, name='Compilers', order=0)
         self.link = Link.objects.create(profile=Profile.load(), url='https://github.com/jane')
         self.url = reverse('presets:save', args=[self.preset.pk])
 
@@ -34,6 +36,7 @@ class WorkspaceSaveTests(TestCase):
             f'bullet_{self.b2.pk}': 'on', f'bullet_{self.b2.pk}_order': '0',
             f'bullet_{self.b1.pk}': 'on', f'bullet_{self.b1.pk}_order': '1',
             f'skill_{self.skill.pk}': 'on', f'skill_{self.skill.pk}_order': '4',
+            f'edu_{self.edu.pk}': 'on', f'edu_{self.edu.pk}_order': '6',
             f'course_{self.c2.pk}': 'on', f'course_{self.c2.pk}_order': '5',
         })
         self.assertEqual(response.status_code, 200)
@@ -50,6 +53,7 @@ class WorkspaceSaveTests(TestCase):
             [(self.b2.pk, 0), (self.b1.pk, 1)],
         )
         self.assertEqual(list(self.preset.preset_skills.values_list('skill_id', 'order')), [(self.skill.pk, 4)])
+        self.assertEqual(list(self.preset.preset_educations.values_list('education_id', 'order')), [(self.edu.pk, 6)])
         self.assertEqual(
             list(self.preset.preset_coursework.values_list('coursework_id', 'order')), [(self.c2.pk, 5)],
         )
@@ -62,13 +66,25 @@ class WorkspaceSaveTests(TestCase):
         })
         self.assertFalse(PresetBullet.objects.filter(bullet=self.orphan).exists())
 
+    def test_course_under_unchecked_education_is_dropped(self):
+        self.post_save({
+            'name': 'Base',
+            f'edu_{self.edu.pk}': 'on',
+            f'course_{self.c1.pk}': 'on',
+            f'course_{self.c3.pk}': 'on',
+        })
+        self.assertEqual(list(self.preset.preset_educations.values_list('education_id', flat=True)), [self.edu.pk])
+        self.assertEqual(list(self.preset.preset_coursework.values_list('coursework_id', flat=True)), [self.c1.pk])
+
     def test_unchecking_everything_empties_the_preset(self):
         PresetComponent.objects.create(preset=self.preset, component=self.exp)
         PresetSkill.objects.create(preset=self.preset, skill=self.skill)
+        PresetEducation.objects.create(preset=self.preset, education=self.edu)
         PresetCoursework.objects.create(preset=self.preset, coursework=self.c1)
         self.post_save({'name': 'Base'})
         self.assertEqual(self.preset.preset_components.count(), 0)
         self.assertEqual(self.preset.preset_skills.count(), 0)
+        self.assertEqual(self.preset.preset_educations.count(), 0)
         self.assertEqual(self.preset.preset_coursework.count(), 0)
 
     def test_saves_header_toggles_and_link_picks(self):
@@ -84,11 +100,13 @@ class WorkspaceSaveTests(TestCase):
         self.post_save({
             'name': 'Base', 'page_limit': 'abc',
             'comp_999999': 'on', f'comp_{self.exp.pk}': 'on', f'comp_{self.exp.pk}_order': 'x',
+            'edu_999999': 'on', f'edu_{self.edu.pk}': 'on',
             'course_999999': 'on', f'course_{self.c1.pk}': 'on',
         })
         self.preset.refresh_from_db()
         self.assertEqual(self.preset.page_limit, 1)
         self.assertEqual(list(self.preset.preset_components.values_list('component_id', 'order')), [(self.exp.pk, 0)])
+        self.assertEqual(list(self.preset.preset_educations.values_list('education_id', flat=True)), [self.edu.pk])
         self.assertEqual(list(self.preset.preset_coursework.values_list('coursework_id', flat=True)), [self.c1.pk])
 
     def test_name_clash_keeps_old_name_but_still_saves_picks(self):
@@ -117,6 +135,7 @@ class CloneTests(TestCase):
         pc = PresetComponent.objects.create(preset=preset, component=comp, order=1)
         PresetBullet.objects.create(preset_component=pc, bullet=bullet, order=2)
         PresetSkill.objects.create(preset=preset, skill=skill, order=3)
+        PresetEducation.objects.create(preset=preset, education=edu, order=6)
         PresetCoursework.objects.create(preset=preset, coursework=course, order=4)
         link = Link.objects.create(profile=Profile.load(), url='https://github.com/jane')
         PresetLink.objects.create(preset=preset, link=link, order=5)
@@ -131,6 +150,7 @@ class CloneTests(TestCase):
         self.assertEqual((new_pc.component_id, new_pc.order), (comp.pk, 1))
         self.assertEqual(list(new_pc.preset_bullets.values_list('bullet_id', 'order')), [(bullet.pk, 2)])
         self.assertEqual(list(clone.preset_skills.values_list('skill_id', 'order')), [(skill.pk, 3)])
+        self.assertEqual(list(clone.preset_educations.values_list('education_id', 'order')), [(edu.pk, 6)])
         self.assertEqual(list(clone.preset_coursework.values_list('coursework_id', 'order')), [(course.pk, 4)])
         self.assertEqual(list(clone.preset_links.values_list('link_id', 'order')), [(link.pk, 5)])
         # Bank rows are shared, not duplicated.

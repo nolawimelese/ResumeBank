@@ -11,7 +11,9 @@ from django.db import transaction
 
 from bank.models import Bullet, Component, Coursework, Education, Link, Profile, Skill
 from compiler.models import Resume
-from presets.models import PresetBullet, PresetComponent, PresetCoursework, PresetSkill, ResumePreset
+from presets.models import (
+    PresetBullet, PresetComponent, PresetCoursework, PresetEducation, PresetSkill, ResumePreset,
+)
 
 # (category, title, organization, location, start, end, tech_stack, [bullets])
 COMPONENTS = [
@@ -249,6 +251,9 @@ class Command(BaseCommand):
             ])
         PresetSkill.objects.bulk_create([
             PresetSkill(preset=preset, skill=skills_by_name[n], order=i) for i, n in enumerate(skill_names)
+        ])
+        PresetEducation.objects.bulk_create([
+            PresetEducation(preset=preset, education=e, order=i) for i, e in enumerate(Education.objects.all())
         ])
         courses = list(Coursework.objects.all())
         if course_names is not None:

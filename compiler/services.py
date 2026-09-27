@@ -26,7 +26,7 @@ from django.db import transaction
 from jinja2 import Environment, FileSystemLoader
 from pypdf import PdfReader
 
-from bank.models import Component, Education, Profile, Skill
+from bank.models import Component, Profile, Skill
 
 from .models import Resume
 
@@ -155,14 +155,14 @@ def resolve_preset(preset):
         by_group[ps.skill.group].append(ps.skill.name)
     skill_groups = [{'label': g.label, 'names': by_group[g]} for g in Skill.Group if by_group[g]]
 
-    # Every Education renders; the preset only picks which courses go on its coursework line.
+    # Picked degrees in preset order, each with its picked courses for the coursework line.
     preset_coursework = preset.preset_coursework.select_related('coursework').order_by('order', 'id')
     courses_by_education = {}
     for pc in preset_coursework:
         courses_by_education.setdefault(pc.coursework.education_id, []).append(pc.coursework)
     educations = [
-        {'education': edu, 'courses': courses_by_education.get(edu.pk, [])}
-        for edu in Education.objects.all()
+        {'education': pe.education, 'courses': courses_by_education.get(pe.education_id, [])}
+        for pe in preset.preset_educations.select_related('education').order_by('order', 'id')
     ]
 
     return {

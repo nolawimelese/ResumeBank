@@ -1,6 +1,8 @@
 from django.contrib import admin
 
-from .models import PresetBullet, PresetComponent, PresetCoursework, PresetLink, PresetSkill, ResumePreset
+from .models import (
+    PresetBullet, PresetComponent, PresetCoursework, PresetEducation, PresetLink, PresetSkill, ResumePreset,
+)
 
 
 class PresetComponentInline(admin.TabularInline):
@@ -18,6 +20,11 @@ class PresetSkillInline(admin.TabularInline):
     extra = 1
 
 
+class PresetEducationInline(admin.TabularInline):
+    model = PresetEducation
+    extra = 1
+
+
 class PresetCourseworkInline(admin.TabularInline):
     model = PresetCoursework
     extra = 1
@@ -26,7 +33,7 @@ class PresetCourseworkInline(admin.TabularInline):
 @admin.register(ResumePreset)
 class ResumePresetAdmin(admin.ModelAdmin):
     list_display = ('name', 'template', 'page_limit', 'include_gpa', 'updated_at')
-    inlines = [PresetLinkInline, PresetComponentInline, PresetSkillInline, PresetCourseworkInline]
+    inlines = [PresetLinkInline, PresetComponentInline, PresetSkillInline, PresetEducationInline, PresetCourseworkInline]
 
 
 class PresetBulletInline(admin.TabularInline):

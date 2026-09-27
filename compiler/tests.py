@@ -7,7 +7,7 @@ from django.test import TestCase, override_settings
 
 from bank.models import Bullet, Component, Coursework, Education, Link, Profile, Skill
 from presets.models import (
-    PresetBullet, PresetComponent, PresetCoursework, PresetLink, PresetSkill, ResumePreset,
+    PresetBullet, PresetComponent, PresetCoursework, PresetEducation, PresetLink, PresetSkill, ResumePreset,
 )
 
 from . import services
@@ -53,6 +53,7 @@ class RenderTests(TestCase):
         self.edu = Education.objects.create(school='State U', degree='B.S. CS', start_date=date(2023, 8, 1))
         self.algo = Coursework.objects.create(education=self.edu, name='Algorithms', order=0)
         self.db = Coursework.objects.create(education=self.edu, name='Databases & SQL', order=1)
+        PresetEducation.objects.create(preset=self.preset, education=self.edu)
 
     def test_coursework_line_lists_only_picked_courses_in_preset_order(self):
         PresetCoursework.objects.create(preset=self.preset, coursework=self.db, order=0)
@@ -62,8 +63,24 @@ class RenderTests(TestCase):
 
     def test_no_picked_courses_omits_the_coursework_line(self):
         tex = services.render_tex(self.preset)
-        self.assertIn('State U', tex)  # education itself always renders
+        self.assertIn('State U', tex)  # a picked education renders even without courses
         self.assertNotIn('Relevant Coursework', tex)
+
+    def test_only_picked_educations_render_in_preset_order(self):
+        grad = Education.objects.create(school='Tech Inst', degree='M.S.', start_date=date(2027, 8, 1))
+        Education.objects.create(school='Skipped College', degree='A.A.', start_date=date(2020, 8, 1))
+        PresetEducation.objects.filter(preset=self.preset).update(order=0)
+        PresetEducation.objects.create(preset=self.preset, education=grad, order=1)
+        tex = services.render_tex(self.preset)
+        self.assertNotIn('Skipped College', tex)
+        self.assertLess(tex.index('State U'), tex.index('Tech Inst'))
+
+    def test_course_of_unpicked_education_does_not_render(self):
+        PresetCoursework.objects.create(preset=self.preset, coursework=self.algo)
+        PresetEducation.objects.filter(preset=self.preset).delete()
+        tex = services.render_tex(self.preset)
+        self.assertNotIn('State U', tex)
+        self.assertNotIn('Algorithms', tex)
 
     def test_render_escapes_user_strings(self):
         tex = services.render_tex(self.preset)

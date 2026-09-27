@@ -2,11 +2,12 @@
 A ResumePreset is a specific selection and ordering of bank rows.
 
 A preset stores no lists of ids; what it includes is defined entirely by the
-PresetComponent / PresetBullet / PresetSkill / PresetCoursework / PresetLink join
-tables. Those hold references, not copies, so editing a Component, Bullet, Skill,
-Coursework or Link propagates to every preset that uses it. Delete-with-warning is a
-query on the default reverse accessors: component.presetcomponent_set.exists(),
-bullet.presetbullet_set.exists(), skill.presetskill_set.exists(),
+PresetComponent / PresetBullet / PresetSkill / PresetEducation / PresetCoursework /
+PresetLink join tables. Those hold references, not copies, so editing a Component,
+Bullet, Skill, Education, Coursework or Link propagates to every preset that uses it.
+Delete-with-warning is a query on the default reverse accessors:
+component.presetcomponent_set.exists(), bullet.presetbullet_set.exists(),
+skill.presetskill_set.exists(), education.preseteducation_set.exists(),
 coursework.presetcoursework_set.exists(), link.presetlink_set.exists().
 """
 from django.db import models
@@ -88,9 +89,27 @@ class PresetSkill(models.Model):
         return f'{self.preset} / {self.skill}'
 
 
+class PresetEducation(models.Model):
+    """An Education (degree) included in a preset. `order` sorts degrees within the Education section."""
+
+    preset = models.ForeignKey(ResumePreset, on_delete=models.CASCADE, related_name='preset_educations')
+    education = models.ForeignKey('bank.Education', on_delete=models.CASCADE)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+        constraints = [
+            models.UniqueConstraint(fields=['preset', 'education'], name='unique_education_per_preset'),
+        ]
+
+    def __str__(self):
+        return f'{self.preset} / {self.education}'
+
+
 class PresetCoursework(models.Model):
-    """A Coursework row included in a preset. Every Education always renders; this only
-    picks which of its courses appear on the "Relevant Coursework" line, and in what order."""
+    """A Coursework row included in a preset: picks which courses appear on a degree's
+    "Relevant Coursework" line, and in what order. Points at the preset rather than
+    PresetEducation, so `save` only keeps courses whose degree is itself picked."""
 
     preset = models.ForeignKey(ResumePreset, on_delete=models.CASCADE, related_name='preset_coursework')
     coursework = models.ForeignKey('bank.Coursework', on_delete=models.CASCADE)

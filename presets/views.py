@@ -15,9 +15,11 @@ from django.views.decorators.http import require_POST
 from bank.models import Bullet, Component, Coursework, Education, Link, Profile, Skill
 from compiler.services import CATEGORY_TITLES, delete_preview
 
-from .models import PresetBullet, PresetComponent, PresetCoursework, PresetLink, PresetSkill, ResumePreset
+from .models import (
+    PresetBullet, PresetComponent, PresetCoursework, PresetEducation, PresetLink, PresetSkill, ResumePreset,
+)
 
-_KEY_RE = re.compile(r'^(comp|bullet|skill|course|link)_(\d+)$')
+_KEY_RE = re.compile(r'^(comp|bullet|skill|edu|course|link)_(\d+)$')
 
 
 def preset_list(request):
@@ -60,18 +62,21 @@ def _header_links(preset):
 
 
 def _education_groups(preset):
-    """Every Education (always rendered) with its courses, annotated with this preset's picks and order."""
+    """Every Education with its courses, annotated with this preset's picks and order."""
+    picked_edus = {pe.education_id: pe.order for pe in preset.preset_educations.all()}
     picked = {pc.coursework_id: pc.order for pc in preset.preset_coursework.all()}
-    return [
+    return _picked_first([
         {
             'education': edu,
+            'checked': edu.pk in picked_edus,
+            'order': picked_edus.get(edu.pk, 0),
             'entries': _picked_first([
                 {'course': c, 'checked': c.pk in picked, 'order': picked.get(c.pk, c.order)}
                 for c in edu.coursework.all()
             ]),
         }
         for edu in Education.objects.prefetch_related('coursework')
-    ]
+    ])
 
 
 def _component_sections(preset):
@@ -115,9 +120,9 @@ def _picked_first(entries):
 
 
 def _parse_picks(post):
-    """{'comp': {id: order}, 'bullet': {...}, 'skill': {...}, 'course': {...}, 'link': {...}}
+    """{'comp': {id: order}, 'bullet': {...}, 'skill': {...}, 'edu': {...}, 'course': {...}, 'link': {...}}
     from checked boxes and their _order siblings."""
-    picks = {'comp': {}, 'bullet': {}, 'skill': {}, 'course': {}, 'link': {}}
+    picks = {'comp': {}, 'bullet': {}, 'skill': {}, 'edu': {}, 'course': {}, 'link': {}}
     for key in post:
         m = _KEY_RE.match(key)
         if m:
@@ -167,7 +172,8 @@ def save(request, pk):
 
 
 def _rewrite_joins(preset, picks):
-    """Replace the five join tables. Bullets are only kept under a component that is itself picked."""
+    """Replace the six join tables. Bullets are only kept under a component that is itself picked,
+    and courses only under an education that is itself picked."""
     valid_components = set(Component.objects.filter(pk__in=picks['comp']).values_list('pk', flat=True))
     preset.preset_components.all().delete()  # cascades to PresetBullet
     preset_components = {
@@ -190,11 +196,18 @@ def _rewrite_joins(preset, picks):
         for sid, order in picks['skill'].items() if sid in valid_skills
     ])
 
-    valid_courses = set(Coursework.objects.filter(pk__in=picks['course']).values_list('pk', flat=True))
+    valid_edus = set(Education.objects.filter(pk__in=picks['edu']).values_list('pk', flat=True))
+    preset.preset_educations.all().delete()
+    PresetEducation.objects.bulk_create([
+        PresetEducation(preset=preset, education_id=eid, order=order)
+        for eid, order in picks['edu'].items() if eid in valid_edus
+    ])
+
+    course_parents = dict(Coursework.objects.filter(pk__in=picks['course']).values_list('pk', 'education_id'))
     preset.preset_coursework.all().delete()
     PresetCoursework.objects.bulk_create([
         PresetCoursework(preset=preset, coursework_id=cid, order=order)
-        for cid, order in picks['course'].items() if cid in valid_courses
+        for cid, order in picks['course'].items() if course_parents.get(cid) in valid_edus
     ])
 
     valid_links = set(Link.objects.filter(pk__in=picks['link']).values_list('pk', flat=True))
@@ -229,6 +242,10 @@ def clone(request, pk):
         PresetSkill.objects.bulk_create([
             PresetSkill(preset=preset, skill_id=ps.skill_id, order=ps.order)
             for ps in source.preset_skills.all()
+        ])
+        PresetEducation.objects.bulk_create([
+            PresetEducation(preset=preset, education_id=pe.education_id, order=pe.order)
+            for pe in source.preset_educations.all()
         ])
         PresetCoursework.objects.bulk_create([
             PresetCoursework(preset=preset, coursework_id=pc.coursework_id, order=pc.order)

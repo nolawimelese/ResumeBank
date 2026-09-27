@@ -1,6 +1,6 @@
 {% load markup %}
 {% comment %}Left pane of the workspace. Field names are what presets.views.save parses:
-show_* toggles, comp_<id> / bullet_<id> / skill_<id> / course_<id> / link_<id> checkboxes and their hidden _order siblings.
+show_* toggles, comp_<id> / bullet_<id> / skill_<id> / edu_<id> / course_<id> / link_<id> checkboxes and their hidden _order siblings.
 Each reorderable list is a .sortable of .sort-item children; an item's own input.pos (a direct child) holds its position,
 which the ↑/↓ handler in base.html renumbers after every move. Rows arrive picked-first from the view and the
 script keeps them grouped that way; arrows are enabled/hidden by script, not here.{% endcomment %}
@@ -44,23 +44,27 @@ script keeps them grouped that way; arrows are enabled/hidden by script, not her
     {% if educations %}
     <fieldset>
         <legend>Education</legend>
+        <div class="sortable">
         {% for g in educations %}
-        <div class="comp-block">
+        <div class="comp-block sort-item{% if not g.checked %} off{% endif %}">
+            <input type="hidden" class="pos" name="edu_{{ g.education.pk }}_order" value="{{ forloop.counter0 }}">
             <div class="row">
-                <span class="grow">
+                <label class="grow">
+                    <input type="checkbox" class="comp-toggle" name="edu_{{ g.education.pk }}" {% if g.checked %}checked{% endif %}>
                     <strong>{{ g.education.school }}</strong>
                     <span class="muted">&middot; {{ g.education.degree }}</span>
-                </span>
+                </label>
+                <button type="button" class="move" data-dir="up" title="Move up">&uarr;</button><button type="button" class="move" data-dir="down" title="Move down">&darr;</button>
                 <a class="edit" href="{% url 'bank:education_edit' g.education.pk %}" target="_blank" title="Edit in the Component Manager">edit</a>
             </div>
             <div class="sortable">
             {% for c in g.entries %}
             <div class="row bullet sort-item">
                 <label class="grow">
-                    <input type="checkbox" name="course_{{ c.course.pk }}" {% if c.checked %}checked{% endif %}>
+                    <input type="checkbox" name="course_{{ c.course.pk }}" {% if c.checked %}checked{% endif %}{% if not g.checked %} disabled{% endif %}>
                     {{ c.course.name }}
                 </label>
-                <input type="hidden" class="pos" name="course_{{ c.course.pk }}_order" value="{{ forloop.counter0 }}">
+                <input type="hidden" class="pos" name="course_{{ c.course.pk }}_order" value="{{ forloop.counter0 }}"{% if not g.checked %} disabled{% endif %}>
                 <button type="button" class="move" data-dir="up" title="Move up">&uarr;</button><button type="button" class="move" data-dir="down" title="Move down">&darr;</button>
             </div>
             {% empty %}
@@ -69,6 +73,7 @@ script keeps them grouped that way; arrows are enabled/hidden by script, not her
             </div>
         </div>
         {% endfor %}
+        </div>
     </fieldset>
     {% endif %}
 

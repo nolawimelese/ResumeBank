@@ -77,7 +77,7 @@ We're gonna work top down to make sure every part of the process is straight
     - [x] config for location, contact
     - [x] professional links
 - [x] Switch ordering system from numbers to arrows
-- [ ] Education selection per preset (currently every Education row is printed)
+- [x] Education selection per preset
 - [ ] Add preview to component editing
 - [ ] Add checkbox for "in progress" certifications
 
