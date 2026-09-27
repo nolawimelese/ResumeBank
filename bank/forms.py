@@ -46,8 +46,8 @@ class ComponentForm(forms.ModelForm):
             'end_date': DateInput,
         }
         help_texts = {
-            'start_date': 'Honors and certifications: the single date goes here.',
-            'end_date': 'Leave blank for "Present".',
+            'start_date': 'Projects, honors and certifications: the single date goes here.',
+            'end_date': 'Blank means "Present"; for projects, blank shows just the date.',
             'tech_stack': 'Projects only; rendered as "Name | Tech".',
         }
 

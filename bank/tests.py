@@ -16,6 +16,25 @@ class IndexTests(TestCase):
         self.assertContains(response, 'Deans List')
 
 
+class ComponentDateTests(TestCase):
+    def test_single_date_categories_drop_end_date(self):
+        for category in (Component.Category.HONOR, Component.Category.CERTIFICATION):
+            component = Component.objects.create(
+                category=category, title='X',
+                start_date=datetime.date(2024, 5, 1), end_date=datetime.date(2024, 6, 1),
+            )
+            component.refresh_from_db()
+            self.assertIsNone(component.end_date)
+
+    def test_project_keeps_optional_end_date(self):
+        component = Component.objects.create(
+            category=Component.Category.PROJECT, title='P',
+            start_date=datetime.date(2024, 5, 1), end_date=datetime.date(2024, 6, 1),
+        )
+        component.refresh_from_db()
+        self.assertEqual(component.end_date, datetime.date(2024, 6, 1))
+
+
 class ComponentPreviewTests(TestCase):
     """The live preview pane is on the component editor only."""
 

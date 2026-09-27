@@ -4,7 +4,11 @@
  * HTML approximation only; the PDF is the source of truth for line breaks.
  *
  * The helpers below mirror compiler/services.py (fmt_date, date_range,
- * bullet_markup) and the template's per-category headings. Change them together.
+ * date_or_range, bullet_markup) and the template's per-category headings.
+ * Change them together.
+ *
+ * Also shows only the date fields the category uses (Component.SINGLE_DATE):
+ * honors/certs have one date, projects hide the end date behind a link.
  */
 (function () {
     var form = document.querySelector('form.edit-form');
@@ -34,6 +38,11 @@
     function dateRange(start, end) {
         if (!fmtDate(start)) return '';
         return fmtDate(start) + ' – ' + (fmtDate(end) || 'Present');
+    }
+
+    // date_or_range: projects show just the start unless an end is set.
+    function dateOrRange(start, end) {
+        return fmtDate(end) ? dateRange(start, end) : fmtDate(start);
     }
 
     // bullet_markup: escape first, then **bold** (non-greedy, single line).
@@ -78,7 +87,7 @@
         var html = '<h3 class="rs-section">' + (SECTION_TITLES[category] || '') + '</h3>';
 
         if (category === 'project') {
-            html += row(titleWith(title, val('tech_stack')), dateRange(val('start_date'), val('end_date')), 'rs-small');
+            html += row(titleWith(title, val('tech_stack')), dateOrRange(val('start_date'), val('end_date')), 'rs-small');
         } else if (category === 'certification' || category === 'honor') {
             html += row(titleWith(title, org), fmtDate(val('start_date')), 'rs-small');
         } else {
@@ -95,7 +104,37 @@
         sheet.innerHTML = html;
     }
 
+    var startRow = form.querySelector('[data-field="start_date"]');
+    var endRow = form.querySelector('[data-field="end_date"]');
+    var addEnd = document.getElementById('add-end-date');
+    var endExpanded = false;
+
+    function syncDateFields() {
+        if (!startRow || !endRow) return;
+        var category = val('category');
+        var single = category === 'honor' || category === 'certification';
+        var project = category === 'project';
+        if (single) form.elements['end_date'].value = '';
+        var showEnd = !single && (!project || endExpanded || val('end_date') !== '');
+        endRow.hidden = !showEnd;
+        if (addEnd) addEnd.hidden = !project || showEnd;
+        startRow.querySelector('label').textContent = single || (project && !showEnd) ? 'Date' : 'Start date';
+    }
+
+    if (addEnd) {
+        addEnd.querySelector('a').addEventListener('click', function (e) {
+            e.preventDefault();
+            endExpanded = true;
+            syncDateFields();
+            form.elements['end_date'].focus();
+        });
+    }
+
     form.addEventListener('input', render);
-    form.addEventListener('change', render);
+    form.addEventListener('change', function (e) {
+        if (e.target.name === 'category') syncDateFields();
+        render();
+    });
+    syncDateFields();
     render();
 })();

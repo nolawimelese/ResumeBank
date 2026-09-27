@@ -11,12 +11,13 @@
     {% csrf_token %}
     {{ form.non_field_errors }}
     {% for field in form %}
-    <p>
+    <p data-field="{{ field.name }}">
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
         {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
         {{ field.errors }}
     </p>
+    {% if preview and field.name == "end_date" %}<p id="add-end-date" hidden><a href="#">+ add end date</a></p>{% endif %}
     {% endfor %}
 
     <h2>{{ inline_title }}</h2>
