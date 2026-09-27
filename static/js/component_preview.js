@@ -9,6 +9,7 @@
  *
  * Also shows only the date fields the category uses (Component.SINGLE_DATE):
  * honors/certs have one date, projects hide the end date behind a link.
+ * Tech stack is projects-only (Component.save() clears it otherwise).
  */
 (function () {
     var form = document.querySelector('form.edit-form');
@@ -106,14 +107,19 @@
 
     var startRow = form.querySelector('[data-field="start_date"]');
     var endRow = form.querySelector('[data-field="end_date"]');
+    var techRow = form.querySelector('[data-field="tech_stack"]');
     var addEnd = document.getElementById('add-end-date');
     var endExpanded = false;
 
-    function syncDateFields() {
-        if (!startRow || !endRow) return;
+    function syncFields() {
         var category = val('category');
-        var single = category === 'honor' || category === 'certification';
         var project = category === 'project';
+        if (techRow) {
+            if (!project) form.elements['tech_stack'].value = '';
+            techRow.hidden = !project;
+        }
+        if (!startRow || !endRow) return;
+        var single = category === 'honor' || category === 'certification';
         if (single) form.elements['end_date'].value = '';
         var showEnd = !single && (!project || endExpanded || val('end_date') !== '');
         endRow.hidden = !showEnd;
@@ -125,16 +131,16 @@
         addEnd.querySelector('a').addEventListener('click', function (e) {
             e.preventDefault();
             endExpanded = true;
-            syncDateFields();
+            syncFields();
             form.elements['end_date'].focus();
         });
     }
 
     form.addEventListener('input', render);
     form.addEventListener('change', function (e) {
-        if (e.target.name === 'category') syncDateFields();
+        if (e.target.name === 'category') syncFields();
         render();
     });
-    syncDateFields();
+    syncFields();
     render();
 })();

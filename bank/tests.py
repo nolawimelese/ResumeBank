@@ -35,6 +35,15 @@ class ComponentDateTests(TestCase):
         self.assertEqual(component.end_date, datetime.date(2024, 6, 1))
 
 
+class ComponentTechStackTests(TestCase):
+    def test_only_projects_keep_tech_stack(self):
+        for category, _ in Component.Category.choices:
+            component = Component.objects.create(category=category, title='X', tech_stack='Python')
+            component.refresh_from_db()
+            expected = 'Python' if category == Component.Category.PROJECT else ''
+            self.assertEqual(component.tech_stack, expected, category)
+
+
 class ComponentPreviewTests(TestCase):
     """The live preview pane is on the component editor only."""
 

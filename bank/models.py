@@ -89,7 +89,8 @@ class Component(models.Model):
     Date convention: Honor and Certification have a single date, stored in
     start_date (save() clears end_date). A Project shows start_date alone
     unless it has an end_date, then a range. For Experience and Leadership a
-    null end_date means "Present".
+    null end_date means "Present". tech_stack is projects-only (save() clears
+    it for other categories).
     """
 
     class Category(models.TextChoices):
@@ -119,6 +120,8 @@ class Component(models.Model):
     def save(self, *args, **kwargs):
         if self.category in self.SINGLE_DATE:
             self.end_date = None
+        if self.category != self.Category.PROJECT:
+            self.tech_stack = ''
         super().save(*args, **kwargs)
 
     def __str__(self):
