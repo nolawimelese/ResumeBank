@@ -78,12 +78,12 @@ We're gonna work top down to make sure every part of the process is straight
     - [x] professional links
 - [x] Switch ordering system from numbers to arrows
 - [x] Education selection per preset
-  - [x] Add Degree dropdown selection ex. PhD, MS, MEng,
+  - [x] Add Degree dropdown selection ex. PhD, MS, MEng, B.S., B.A.
 - [x] Add preview to component editing
 - [x] Add checkbox for "in progress" certifications
 
 on hold
 
-- [ ] Make honors display below Education
+- [x] Make honors display below Education
 
 </details>

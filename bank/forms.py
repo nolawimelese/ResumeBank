@@ -5,9 +5,9 @@ the nested case the docs warn about is the preset builder, which does not use
 formsets at all (see presets.views.save).
 """
 from django import forms
-from django.forms import inlineformset_factory, modelformset_factory
+from django.forms import inlineformset_factory
 
-from .models import Bullet, Component, Coursework, Education, Link, Profile, Skill
+from .models import Bullet, Component, Coursework, Education, Link, Profile
 
 
 class DateInput(forms.DateInput):
@@ -58,9 +58,4 @@ class ComponentForm(forms.ModelForm):
 BulletFormSet = inlineformset_factory(
     Component, Bullet, fields=['text', 'order'], extra=2, can_delete=True,
     widgets={'text': forms.Textarea(attrs={'rows': 2})},
-)
-
-
-SkillFormSet = modelformset_factory(
-    Skill, fields=['group', 'name', 'order'], extra=3, can_delete=True,
 )

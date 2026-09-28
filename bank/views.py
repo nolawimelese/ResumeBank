@@ -3,15 +3,19 @@ Component Manager: standalone CRUD for the source data. Presets hold
 references, so every edit here shows up in every preset on its next compile.
 Delete pages warn using the join-table reverse accessors (a query, not a scan).
 """
+import re
+
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from compiler.services import CATEGORY_TITLES
 
 from .forms import (
-    BulletFormSet, ComponentForm, CourseworkFormSet, EducationForm, LinkFormSet, ProfileForm, SkillFormSet,
+    BulletFormSet, ComponentForm, CourseworkFormSet, EducationForm, LinkFormSet, ProfileForm,
 )
 from .models import Component, Education, Profile, Skill
 
@@ -114,15 +118,91 @@ def component_delete(request, pk):
     })
 
 
-# ---- Skills: one page, one formset ----
+# ---- Skills: a board of row lists, one small POST per action ----
+# Every endpoint re-renders the whole board fragment (it is tiny, and a move touches two groups).
+
+def _board_context(note='', error=''):
+    """Groups in PDF (enum) order, empty ones included so they can be added to."""
+    skills = Skill.objects.annotate(uses=Count('presetskill')).order_by('order', 'id')
+    by_group = {g: [] for g in Skill.Group}
+    for skill in skills:
+        by_group[skill.group].append(skill)
+    return {
+        'groups': [{'value': g.value, 'label': g.label, 'skills': rows} for g, rows in by_group.items()],
+        'note': note,
+        'error': error,
+    }
+
+
+def _render_board(request, note='', error=''):
+    return render(request, 'bank/_skill_board.html', _board_context(note, error))
+
+
+def _name_taken(group, name, exclude_pk=None):
+    return Skill.objects.filter(group=group, name__iexact=name).exclude(pk=exclude_pk).exists()
+
 
 def skills(request):
-    if request.method == 'POST':
-        formset = SkillFormSet(request.POST)
-        if formset.is_valid():
-            formset.save()
-            messages.success(request, 'Saved skills.')
-            return redirect('bank:skills')
-    else:
-        formset = SkillFormSet()
-    return render(request, 'bank/skills.html', {'formset': formset})
+    return render(request, 'bank/skills.html', _board_context())
+
+
+@require_POST
+def skill_add(request):
+    group = request.POST.get('group')
+    if group not in Skill.Group.values:
+        return _render_board(request, error='Unknown group.')
+    names = [n.strip() for n in re.split(r'[,\n]', request.POST.get('names', ''))]
+    added, skipped = [], []
+    with transaction.atomic():
+        order = Skill.objects.filter(group=group).aggregate(m=Max('order'))['m']
+        order = -1 if order is None else order
+        for name in names:
+            if not name:
+                continue
+            if _name_taken(group, name) or name.lower() in (a.lower() for a in added):
+                skipped.append(name)
+                continue
+            order += 1
+            Skill.objects.create(group=group, name=name, order=order)
+            added.append(name)
+    return _render_board(request, note=f'Skipped duplicates: {", ".join(skipped)}' if skipped else '')
+
+
+@require_POST
+def skill_rename(request, pk):
+    skill = get_object_or_404(Skill, pk=pk)
+    name = request.POST.get('name', '').strip()
+    if not name:
+        return _render_board(request, error='A skill needs a name.')
+    if _name_taken(skill.group, name, exclude_pk=skill.pk):
+        return _render_board(request, error=f'"{name}" is already in {skill.get_group_display()}.')
+    skill.name = name
+    skill.save(update_fields=['name'])
+    return _render_board(request)
+
+
+@require_POST
+def skill_delete(request, pk):
+    get_object_or_404(Skill, pk=pk).delete()
+    return _render_board(request)
+
+
+@require_POST
+def skill_move(request):
+    """Put skill `pk` into `group`; `ids` is that group's full id list in its new order."""
+    skill = get_object_or_404(Skill, pk=request.POST.get('pk'))
+    group = request.POST.get('group')
+    if group not in Skill.Group.values:
+        return _render_board(request, error='Unknown group.')
+    if group != skill.group and _name_taken(group, skill.name):
+        return _render_board(request, error=f'"{skill.name}" is already in {Skill.Group(group).label}.')
+    ids = [int(i) for i in request.POST.getlist('ids') if i.isdigit()]
+    with transaction.atomic():
+        skill.group = group
+        skill.save(update_fields=['group'])
+        rows = {s.pk: s for s in Skill.objects.filter(pk__in=ids, group=group)}
+        for order, sid in enumerate(ids):
+            if sid in rows:
+                rows[sid].order = order
+        Skill.objects.bulk_update(rows.values(), ['order'])
+    return _render_board(request)

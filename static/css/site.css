@@ -57,7 +57,38 @@ button.move + button.move { margin-left: -.35rem; }
 button.move:hover:not(:disabled) { color: inherit; }
 button.move:disabled { opacity: .3; cursor: default; }
 .sort-item.unpicked > .move, .sort-item.unpicked > .row > .move { visibility: hidden; }
+/* Skill pills: the checkbox is visually hidden but still focusable, so Space toggles. Picked pills are filled and draggable. */
+.pills { display: flex; flex-wrap: wrap; gap: .3rem; padding: .15rem 0 .35rem; }
+.pill { position: relative; display: inline-flex; align-items: center; padding: .1rem .55rem; border: 1px solid #333; border-radius: 999px; background: #333; color: #fff; font-size: .85rem; cursor: grab; user-select: none; }
+.pill.unpicked { background: none; color: var(--muted); border-color: var(--border); cursor: pointer; }
+.pill.unpicked:hover { color: inherit; border-color: var(--muted); }
+.pill:focus-within { outline: 2px solid #4a90d9; outline-offset: 1px; }
+.pill.dragging { opacity: .4; }
+.pill input[type=checkbox] { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+button.pick-all { margin-left: .4rem; padding: 0; font-size: .75rem; text-transform: none; }
 a.edit { font-size: .8rem; color: var(--muted); }
+
+/* ---------- Skills board: one list of editable rows per group, blank add row last ---------- */
+.skill-card { border: 1px solid var(--border); padding: .5rem .75rem .6rem; margin-bottom: 1rem; }
+.skill-card h3 { margin: 0 0 .3rem; font-size: 1rem; }
+.skill-list { list-style: none; padding: .15rem; margin: 0 -.15rem .4rem; border: 1px dashed transparent; max-width: 30rem; }
+.skill-list.drop-target { border-color: var(--muted); background: var(--pane-bg); }
+.skill-row { display: flex; align-items: center; gap: .4rem; padding: .1rem .2rem; border-bottom: 1px solid #eee; background: #fff; }
+.skill-row:hover, .skill-row:focus-within { background: var(--pane-bg); }
+.skill-row.dragging { opacity: .35; }
+.skill-row .handle { width: 1rem; text-align: center; color: var(--muted); cursor: grab; user-select: none; visibility: hidden; }
+.skill-row:hover .handle, .skill-row:focus-within .handle { visibility: visible; }
+.skill-row input[type=text] { flex: 1; min-width: 0; font: inherit; padding: .15rem .3rem; border: 1px solid transparent; border-radius: 3px; background: transparent; }
+.skill-row input[type=text]:hover { border-color: var(--border); }
+.skill-row input[type=text]:focus { border-color: var(--muted); background: #fff; outline: none; }
+.skill-row .uses { font-size: .75rem; color: var(--muted); white-space: nowrap; }
+.skill-row .x { border: 0; background: none; padding: 0 .3rem; font-size: 1.1rem; line-height: 1; color: var(--muted); cursor: pointer; border-radius: 3px; opacity: 0; }
+.skill-row:hover .x, .skill-row:focus-within .x, .skill-row .x:focus { opacity: 1; }
+.skill-row .x:hover { color: var(--warn); background: var(--warn-bg); }
+.skill-row.add { border-bottom: 0; padding-left: 1.6rem; }  /* line up with the names, past the handle */
+.skill-add { flex: 1; display: flex; }
+.skill-add input::placeholder { color: var(--muted); }
+.pdf-line { margin: .4rem 0 0; font-size: .85rem; color: var(--muted); }
 
 /* htmx default indicator styles are injected by htmx itself; make ours a little louder. */
 #compiling { color: var(--muted); font-style: italic; }

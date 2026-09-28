@@ -3,7 +3,9 @@ import datetime
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Component, Education
+from presets.models import PresetSkill, ResumePreset
+
+from .models import Component, Education, Skill
 
 
 class IndexTests(TestCase):
@@ -77,3 +79,73 @@ class EditorPreviewTests(TestCase):
 
     def test_profile_editor_has_no_preview(self):
         self.assertPreview(reverse('bank:profile'), False)
+
+
+class SkillBoardTests(TestCase):
+    """The skills board: every action is its own POST and returns the re-rendered board."""
+
+    def names(self, group):
+        return list(Skill.objects.filter(group=group).order_by('order', 'id').values_list('name', flat=True))
+
+    def test_page_lists_groups_in_pdf_order_including_empty_ones(self):
+        response = self.client.get(reverse('bank:skills'))
+        self.assertEqual(response.status_code, 200)
+        labels = [g['label'] for g in response.context['groups']]
+        self.assertEqual(labels, ['Languages', 'Frameworks', 'Tools', 'Other'])
+
+    def test_add_splits_skips_blanks_and_duplicates_and_appends(self):
+        Skill.objects.create(group=Skill.Group.LANGUAGES, name='Python', order=5)
+        response = self.client.post(reverse('bank:skill_add'), {
+            'group': 'languages', 'names': 'Go, python,\nRust,, go\r\n',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'bank/_skill_board.html')
+        self.assertEqual(self.names('languages'), ['Python', 'Go', 'Rust'])
+        self.assertEqual(Skill.objects.get(name='Go').order, 6)
+        self.assertContains(response, 'Skipped duplicates: python, go')
+
+    def test_add_rejects_unknown_group(self):
+        self.client.post(reverse('bank:skill_add'), {'group': 'nope', 'names': 'Go'})
+        self.assertFalse(Skill.objects.exists())
+
+    def test_rename(self):
+        go = Skill.objects.create(group=Skill.Group.LANGUAGES, name='Go')
+        Skill.objects.create(group=Skill.Group.LANGUAGES, name='Rust')
+        self.client.post(reverse('bank:skill_rename', args=[go.pk]), {'name': ' Golang '})
+        go.refresh_from_db()
+        self.assertEqual(go.name, 'Golang')
+        for bad in ('', 'rust'):
+            response = self.client.post(reverse('bank:skill_rename', args=[go.pk]), {'name': bad})
+            self.assertContains(response, 'class="flash error"')
+            go.refresh_from_db()
+            self.assertEqual(go.name, 'Golang')
+
+    def test_delete_cascades_to_presets(self):
+        go = Skill.objects.create(group=Skill.Group.LANGUAGES, name='Go')
+        PresetSkill.objects.create(preset=ResumePreset.objects.create(name='P'), skill=go)
+        response = self.client.get(reverse('bank:skills'))
+        self.assertContains(response, 'hx-confirm')  # used skills ask before deleting
+        self.client.post(reverse('bank:skill_delete', args=[go.pk]))
+        self.assertFalse(Skill.objects.exists())
+        self.assertFalse(PresetSkill.objects.exists())
+
+    def test_move_regroups_and_renumbers_target(self):
+        go = Skill.objects.create(group=Skill.Group.LANGUAGES, name='Go', order=0)
+        django = Skill.objects.create(group=Skill.Group.FRAMEWORKS, name='Django', order=0)
+        react = Skill.objects.create(group=Skill.Group.FRAMEWORKS, name='React', order=1)
+        self.client.post(reverse('bank:skill_move'), {
+            'pk': go.pk, 'group': 'frameworks', 'ids': [react.pk, go.pk, django.pk],
+        })
+        self.assertEqual(self.names('frameworks'), ['React', 'Go', 'Django'])
+        self.assertEqual(self.names('languages'), [])
+
+    def test_move_refuses_duplicate_name_in_target_group(self):
+        go = Skill.objects.create(group=Skill.Group.LANGUAGES, name='Go')
+        Skill.objects.create(group=Skill.Group.OTHER, name='go')
+        response = self.client.post(reverse('bank:skill_move'), {'pk': go.pk, 'group': 'other', 'ids': [go.pk]})
+        self.assertContains(response, 'class="flash error"')
+        go.refresh_from_db()
+        self.assertEqual(go.group, 'languages')
+
+    def test_endpoints_are_post_only(self):
+        self.assertEqual(self.client.get(reverse('bank:skill_add')).status_code, 405)
