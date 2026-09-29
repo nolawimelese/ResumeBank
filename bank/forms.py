@@ -48,10 +48,7 @@ class ComponentForm(forms.ModelForm):
             'tech_stack': forms.TextInput(attrs={'size': 70, 'style': 'max-width: 100%'}),
         }
         help_texts = {
-            'start_date': 'Projects, honors and certifications: the single date goes here.',
-            'in_progress': 'Shows "In Progress" instead of the date.',
-            'end_date': 'Blank means "Present"; for projects, blank shows just the date.',
-            'tech_stack': 'Rendered as "Name | Tech".',
+            'in_progress': 'Shows "In Progress" instead of the date.'
         }
 
 
