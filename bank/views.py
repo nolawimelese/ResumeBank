@@ -24,11 +24,11 @@ def index(request):
     components = Component.objects.prefetch_related('bullets')
     by_category = {c: [] for c in Component.Category}
     for component in components:
-        by_category[component.category].append(component)
+        by_category[Component.Category(component.category)].append(component)
     skills = Skill.objects.all()
     by_group = {g: [] for g in Skill.Group}
     for skill in skills:
-        by_group[skill.group].append(skill)
+        by_group[Skill.Group(skill.group)].append(skill)
     return render(request, 'bank/index.html', {
         'profile': Profile.load(),
         'educations': Education.objects.prefetch_related('coursework'),
@@ -126,7 +126,7 @@ def _board_context(note='', error=''):
     skills = Skill.objects.annotate(uses=Count('presetskill')).order_by('order', 'id')
     by_group = {g: [] for g in Skill.Group}
     for skill in skills:
-        by_group[skill.group].append(skill)
+        by_group[Skill.Group(skill.group)].append(skill)
     return {
         'groups': [{'value': g.value, 'label': g.label, 'skills': rows} for g, rows in by_group.items()],
         'note': note,

@@ -7,7 +7,16 @@ as bullet blocks. Presets (see presets.models) reference these rows by pk
 through explicit join tables, so editing a row here propagates to every
 preset that uses it.
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Callable
+
 from django.db import models
+
+if TYPE_CHECKING:
+    from presets.models import (
+        PresetBullet, PresetComponent, PresetCoursework, PresetEducation, PresetLink, PresetSkill,
+    )
 
 
 class Profile(models.Model):
@@ -45,6 +54,10 @@ class Link(models.Model):
     url = models.URLField()
     order = models.PositiveIntegerField(default=0)
 
+    # Added by Django at runtime; declared here for the type checker only.
+    get_link_type_display: Callable[[], str]
+    presetlink_set: models.Manager[PresetLink]
+
     class Meta:
         ordering = ['order']
 
@@ -80,6 +93,10 @@ class Education(models.Model):
     end_date = models.DateField(null=True, blank=True)
     gpa = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)
 
+    # Added by Django at runtime; declared here for the type checker only.
+    get_degree_title_display: Callable[[], str]
+    preseteducation_set: models.Manager[PresetEducation]
+
     class Meta:
         ordering = ['-start_date']
 
@@ -97,6 +114,9 @@ class Coursework(models.Model):
     education = models.ForeignKey(Education, on_delete=models.CASCADE, related_name='coursework')
     name = models.CharField(max_length=100)
     order = models.PositiveIntegerField(default=0)
+
+    # Added by Django at runtime; declared here for the type checker only.
+    presetcoursework_set: models.Manager[PresetCoursework]
 
     class Meta:
         ordering = ['order']
@@ -142,6 +162,9 @@ class Component(models.Model):
 
     SINGLE_DATE = {Category.HONOR, Category.CERTIFICATION}
 
+    # Added by Django at runtime; declared here for the type checker only.
+    presetcomponent_set: models.Manager[PresetComponent]
+
     class Meta:
         ordering = ['category', '-start_date', 'title']
 
@@ -171,6 +194,9 @@ class Bullet(models.Model):
     text = models.TextField()
     order = models.PositiveIntegerField(default=0)
 
+    # Added by Django at runtime; declared here for the type checker only.
+    presetbullet_set: models.Manager[PresetBullet]
+
     class Meta:
         ordering = ['order']
 
@@ -190,6 +216,10 @@ class Skill(models.Model):
     group = models.CharField(max_length=20, choices=Group.choices, default=Group.OTHER)
     name = models.CharField(max_length=100)
     order = models.PositiveIntegerField(default=0)
+
+    # Added by Django at runtime; declared here for the type checker only.
+    get_group_display: Callable[[], str]
+    presetskill_set: models.Manager[PresetSkill]
 
     class Meta:
         ordering = ['group', 'order']
