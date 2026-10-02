@@ -20,8 +20,18 @@ class ProfileForm(forms.ModelForm):
         fields = ['name', 'email', 'phone', 'location']
 
 
+class LinkForm(forms.ModelForm):
+    # Accept "linkedin.com/in/me" without a scheme: plain text input (the
+    # browser's type=url check demands one) and Django prepends https://.
+    url = forms.URLField(assume_scheme='https', widget=forms.TextInput)
+
+    class Meta:
+        model = Link
+        fields = ['link_type', 'url', 'order']
+
+
 LinkFormSet = inlineformset_factory(
-    Profile, Link, fields=['link_type', 'url', 'order'], extra=1, can_delete=True,
+    Profile, Link, form=LinkForm, fields=['link_type', 'url', 'order'], extra=1, can_delete=True,
 )
 
 
