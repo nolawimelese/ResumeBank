@@ -86,4 +86,6 @@ on hold
 
 - [x] Make honors display below Education
 
+- [ ] parse phone number so it always displays in one format
+
 </details>
