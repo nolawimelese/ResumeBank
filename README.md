@@ -87,5 +87,14 @@ on hold
 - [x] Make honors display below Education
 
 - [ ] parse phone number so it always displays in one format
+- [ ] fix formatting in education section
+
+</details>
+
+<details>
+
+<summary>Long-term</summary>
+
+- [ ] add templates and choices for sections (education section)
 
 </details>
