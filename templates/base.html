@@ -36,6 +36,7 @@
             items.forEach(function (it, i) {
                 it.querySelector(':scope > input.pos').value = i;
                 it.classList.toggle('unpicked', i >= picked);
+                if (it.matches('.pill')) it.draggable = i < picked;  // skill pills reorder by drag, not arrows
                 it.querySelectorAll(':scope > .move, :scope > .row > .move').forEach(function (b) {
                     b.disabled = i >= picked || (b.dataset.dir === 'up' ? i === 0 : i === picked - 1);
                 });
@@ -73,6 +74,60 @@
             refreshList(item.parentNode);
             if (!btn.disabled) btn.focus();  // moving the node can drop focus; keep repeated clicks easy
             item.querySelector(':scope > input.pos').dispatchEvent(new Event('input', {bubbles: true}));
+        });
+
+        // Skill pills: "all" / "none" per group. Picked pills are already first, so ticking the rest in
+        // place keeps the order; one input event queues one save.
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('button.pick-all');
+            if (!btn) return;
+            var list = btn.closest('h4').nextElementSibling;
+            sortItems(list).forEach(function (it) {
+                it.querySelector('input[type=checkbox]').checked = btn.dataset.pick === 'all';
+            });
+            refreshList(list);
+            list.querySelector('input.pos').dispatchEvent(new Event('input', {bubbles: true}));
+        });
+
+        // Skill pills: drag a picked pill among the other picked pills of its group. The pill moves as
+        // you drag; dropping renumbers and auto-saves, dropping anywhere else puts it back.
+        var dragPill = null, pillHome = null, pillDropped = false;
+        document.addEventListener('dragstart', function (e) {
+            var pill = e.target.closest && e.target.closest('.pills > .pill');
+            if (!pill || !isPicked(pill)) return;
+            dragPill = pill;
+            pillHome = pill.nextSibling;
+            pillDropped = false;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', '');
+            setTimeout(function () { pill.classList.add('dragging'); }, 0);
+        });
+        document.addEventListener('dragover', function (e) {
+            if (!dragPill || !e.target.closest || e.target.closest('.pills') !== dragPill.parentNode) return;
+            e.preventDefault();
+            var list = dragPill.parentNode;
+            var picked = sortItems(list).filter(function (it) { return it !== dragPill && isPicked(it); });
+            var before = picked.find(function (it) {  // pills wrap: compare rows first
+                var r = it.getBoundingClientRect();
+                return e.clientY < r.top || (e.clientY <= r.bottom && e.clientX < r.left + r.width / 2);
+            });
+            var anchor = before || (picked.length ? picked[picked.length - 1].nextSibling : list.firstChild);
+            if (anchor !== dragPill && dragPill.nextSibling !== anchor) list.insertBefore(dragPill, anchor);
+        });
+        document.addEventListener('drop', function (e) {
+            if (!dragPill || !e.target.closest || e.target.closest('.pills') !== dragPill.parentNode) return;
+            e.preventDefault();
+            pillDropped = true;
+            refreshList(dragPill.parentNode);
+            if (dragPill.nextSibling !== pillHome) {
+                dragPill.querySelector(':scope > input.pos').dispatchEvent(new Event('input', {bubbles: true}));
+            }
+        });
+        document.addEventListener('dragend', function () {
+            if (!dragPill) return;
+            dragPill.classList.remove('dragging');
+            if (!pillDropped) dragPill.parentNode.insertBefore(dragPill, pillHome);
+            dragPill = pillHome = null;
         });
     </script>
 </body>

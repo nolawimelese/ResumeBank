@@ -91,7 +91,7 @@
     \BLOCK{set edu = item.education }
     \resumeSubheading
       {\VAR{edu.school|latex}}{\VAR{edu.location|latex}}
-      {\VAR{edu.degree|latex}\BLOCK{if preset.include_gpa and edu.gpa is not none }, GPA: \VAR{edu.gpa}\BLOCK{endif}}{\VAR{edu.start_date|date_range(edu.end_date)}}
+      {\VAR{edu.display_degree|latex}\BLOCK{if preset.include_gpa and edu.gpa is not none }, GPA: \VAR{edu.gpa}\BLOCK{endif}}{\VAR{edu.start_date|date_range(edu.end_date)}}
     \BLOCK{if item.courses }
       \resumeItemListStart
         \resumeItem{\textbf{Relevant Coursework}: \VAR{item.courses|map(attribute='name')|map('latex')|join(', ')}}
@@ -124,10 +124,10 @@
     \BLOCK{set c = item.component }
     \BLOCK{if section.category == 'project' }
     \resumeProjectHeading
-      {\textbf{\VAR{c.title|latex}}\BLOCK{if c.tech_stack } $|$ \emph{\VAR{c.tech_stack|latex}}\BLOCK{endif}}{\VAR{c.start_date|date_range(c.end_date)}}
+      {\textbf{\VAR{c.title|latex}}\BLOCK{if c.tech_stack } $|$ \emph{\VAR{c.tech_stack|latex}}\BLOCK{endif}}{\VAR{c.start_date|date_or_range(c.end_date)}}
     \BLOCK{elif section.category == 'certification' }
     \resumeProjectHeading
-      {\textbf{\VAR{c.title|latex}}\BLOCK{if c.organization } $|$ \emph{\VAR{c.organization|latex}}\BLOCK{endif}}{\VAR{c.start_date|date}}
+      {\textbf{\VAR{c.title|latex}}\BLOCK{if c.organization } $|$ \emph{\VAR{c.organization|latex}}\BLOCK{endif}}{\BLOCK{if c.in_progress }In Progress\BLOCK{else}\VAR{c.start_date|date}\BLOCK{endif}}
     \BLOCK{else}
     \resumeSubheading
       {\VAR{c.title|latex}}{\VAR{c.start_date|date_range(c.end_date)}}

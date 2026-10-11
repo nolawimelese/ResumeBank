@@ -1,0 +1,30 @@
+{% comment %}The Skills page body. Every action (add / rename / delete / move) POSTs and gets this whole fragment back
+(hx-target="#skill-board", outerHTML). Rename, keyboard moves and drag are wired in static/js/skill_board.js, which reads the data-* URLs.{% endcomment %}
+<div id="skill-board" data-move-url="{% url 'bank:skill_move' %}">
+    {% if error %}<p class="flash error">{{ error }}</p>{% endif %}
+    {% if note %}<p class="muted">{{ note }}</p>{% endif %}
+    {% for g in groups %}
+    <section class="skill-card">
+        <h3>{{ g.label }}</h3>
+        <ul class="skill-list" data-group="{{ g.value }}">
+            {% for s in g.skills %}
+            <li class="skill-row" data-id="{{ s.pk }}" data-rename-url="{% url 'bank:skill_rename' s.pk %}">
+                <span class="handle" draggable="true" title="Drag to reorder or move to another group">&#10303;</span>
+                <input type="text" class="skill-name" value="{{ s.name }}" data-original="{{ s.name }}" aria-label="Skill name" autocomplete="off">
+                {% if s.uses %}<small class="uses">{{ s.uses }} preset{{ s.uses|pluralize }}</small>{% endif %}
+                <button type="button" class="x" title="Delete"
+                        hx-post="{% url 'bank:skill_delete' s.pk %}" hx-target="#skill-board" hx-swap="outerHTML"
+                        {% if s.uses %}hx-confirm="{{ s.name }} is used in {{ s.uses }} preset{{ s.uses|pluralize }}. Delete anyway?"{% endif %}>&times;</button>
+            </li>
+            {% endfor %}
+            <li class="skill-row add">
+                <form class="skill-add" hx-post="{% url 'bank:skill_add' %}" hx-target="#skill-board" hx-swap="outerHTML">
+                    <input type="hidden" name="group" value="{{ g.value }}">
+                    <input type="text" name="names" placeholder="+ add a skill…" aria-label="Add a {{ g.label }} skill" autocomplete="off">
+                </form>
+            </li>
+        </ul>
+        {% if g.skills %}<p class="pdf-line"><strong>{{ g.label }}:</strong> {% for s in g.skills %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+    </section>
+    {% endfor %}
+</div>

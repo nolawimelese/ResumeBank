@@ -34,6 +34,9 @@ class EscapeTests(TestCase):
         self.assertEqual(services.fmt_date(date(2025, 5, 1)), 'May 2025')
         self.assertEqual(services.date_range(date(2024, 9, 1), None), 'Sep. 2024 -- Present')
         self.assertEqual(services.date_range(None, None), '')
+        self.assertEqual(services.date_or_range(date(2025, 2, 1), None), 'Feb. 2025')
+        self.assertEqual(services.date_or_range(date(2025, 2, 1), date(2025, 5, 1)), 'Feb. 2025 -- May 2025')
+        self.assertEqual(services.date_or_range(None, None), '')
 
 
 class RenderTests(TestCase):
@@ -60,6 +63,12 @@ class RenderTests(TestCase):
         PresetCoursework.objects.create(preset=self.preset, coursework=self.algo, order=1)
         tex = services.render_tex(self.preset)
         self.assertIn(r'\textbf{Relevant Coursework}: Databases \& SQL, Algorithms}', tex)
+
+    def test_degree_title_prefixes_field_of_study(self):
+        self.edu.degree_title = Education.DegreeTitle.BS
+        self.edu.degree = 'Computer Science'
+        self.edu.save()
+        self.assertIn('B.S. Computer Science', services.render_tex(self.preset))
 
     def test_no_picked_courses_omits_the_coursework_line(self):
         tex = services.render_tex(self.preset)
@@ -114,6 +123,31 @@ class RenderTests(TestCase):
         parts = services.resolve_preset(self.preset)['header_parts']
         self.assertEqual(len(parts), 2)
         self.assertIn('linkedin.com/in/jane', parts[0])
+
+    def test_project_shows_single_date_unless_it_has_an_end(self):
+        project = Component.objects.create(
+            category=Component.Category.PROJECT, title='Tiny Shell', start_date=date(2024, 10, 1),
+        )
+        PresetComponent.objects.create(preset=self.preset, component=project)
+        tex = services.render_tex(self.preset)
+        self.assertIn('{Oct. 2024}', tex)
+        self.assertNotIn('Oct. 2024 -- Present', tex)
+        project.end_date = date(2024, 11, 1)
+        project.save()
+        self.assertIn('{Oct. 2024 -- Nov. 2024}', services.render_tex(self.preset))
+
+    def test_in_progress_certification_replaces_its_date(self):
+        cert = Component.objects.create(
+            category=Component.Category.CERTIFICATION, title='AWS SAA',
+            start_date=date(2026, 12, 1), in_progress=True,
+        )
+        PresetComponent.objects.create(preset=self.preset, component=cert)
+        tex = services.render_tex(self.preset)
+        self.assertIn('{In Progress}', tex)
+        self.assertNotIn('Dec. 2026', tex)
+        cert.in_progress = False
+        cert.save()
+        self.assertIn('{Dec. 2026}', services.render_tex(self.preset))
 
     def _add_honor(self):
         honor = Component.objects.create(

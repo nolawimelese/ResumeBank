@@ -57,7 +57,62 @@ button.move + button.move { margin-left: -.35rem; }
 button.move:hover:not(:disabled) { color: inherit; }
 button.move:disabled { opacity: .3; cursor: default; }
 .sort-item.unpicked > .move, .sort-item.unpicked > .row > .move { visibility: hidden; }
+/* Skill pills: the checkbox is visually hidden but still focusable, so Space toggles. Picked pills are filled and draggable. */
+.pills { display: flex; flex-wrap: wrap; gap: .3rem; padding: .15rem 0 .35rem; }
+.pill { position: relative; display: inline-flex; align-items: center; padding: .1rem .55rem; border: 1px solid #333; border-radius: 999px; background: #333; color: #fff; font-size: .85rem; cursor: grab; user-select: none; }
+.pill.unpicked { background: none; color: var(--muted); border-color: var(--border); cursor: pointer; }
+.pill.unpicked:hover { color: inherit; border-color: var(--muted); }
+.pill:focus-within { outline: 2px solid #4a90d9; outline-offset: 1px; }
+.pill.dragging { opacity: .4; }
+.pill input[type=checkbox] { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+button.pick-all { margin-left: .4rem; padding: 0; font-size: .75rem; text-transform: none; }
 a.edit { font-size: .8rem; color: var(--muted); }
+
+/* ---------- Skills board: one list of editable rows per group, blank add row last ---------- */
+.skill-card { border: 1px solid var(--border); padding: .5rem .75rem .6rem; margin-bottom: 1rem; }
+.skill-card h3 { margin: 0 0 .3rem; font-size: 1rem; }
+.skill-list { list-style: none; padding: .15rem; margin: 0 -.15rem .4rem; border: 1px dashed transparent; max-width: 30rem; }
+.skill-list.drop-target { border-color: var(--muted); background: var(--pane-bg); }
+.skill-row { display: flex; align-items: center; gap: .4rem; padding: .1rem .2rem; border-bottom: 1px solid #eee; background: #fff; }
+.skill-row:hover, .skill-row:focus-within { background: var(--pane-bg); }
+.skill-row.dragging { opacity: .35; }
+.skill-row .handle { width: 1rem; text-align: center; color: var(--muted); cursor: grab; user-select: none; visibility: hidden; }
+.skill-row:hover .handle, .skill-row:focus-within .handle { visibility: visible; }
+.skill-row input[type=text] { flex: 1; min-width: 0; font: inherit; padding: .15rem .3rem; border: 1px solid transparent; border-radius: 3px; background: transparent; }
+.skill-row input[type=text]:hover { border-color: var(--border); }
+.skill-row input[type=text]:focus { border-color: var(--muted); background: #fff; outline: none; }
+.skill-row .uses { font-size: .75rem; color: var(--muted); white-space: nowrap; }
+.skill-row .x { border: 0; background: none; padding: 0 .3rem; font-size: 1.1rem; line-height: 1; color: var(--muted); cursor: pointer; border-radius: 3px; opacity: 0; }
+.skill-row:hover .x, .skill-row:focus-within .x, .skill-row .x:focus { opacity: 1; }
+.skill-row .x:hover { color: var(--warn); background: var(--warn-bg); }
+.skill-row.add { border-bottom: 0; padding-left: 1.6rem; }  /* line up with the names, past the handle */
+.skill-add { flex: 1; display: flex; }
+.skill-add input::placeholder { color: var(--muted); }
+.pdf-line { margin: .4rem 0 0; font-size: .85rem; color: var(--muted); }
 
 /* htmx default indicator styles are injected by htmx itself; make ours a little louder. */
 #compiling { color: var(--muted); font-style: italic; }
+
+/* ---------- Component editor: form + live resume-entry preview ---------- */
+body.editor-page { max-width: 110rem; }
+.editor { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem; align-items: start; }
+.component-preview { position: sticky; top: 1rem; max-width: 100%; overflow-x: auto; }
+@media (max-width: 80rem) { .editor { grid-template-columns: minmax(0, 1fr); } }
+
+/* Latin Modern, pdflatex's Computer Modern, served locally so browser line wraps match the PDF. */
+@font-face { font-family: "Latin Modern Roman"; src: url("../fonts/lmroman10-regular.otf") format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Latin Modern Roman"; src: url("../fonts/lmroman10-bold.otf") format("opentype"); font-weight: bold; font-style: normal; }
+@font-face { font-family: "Latin Modern Roman"; src: url("../fonts/lmroman10-italic.otf") format("opentype"); font-weight: normal; font-style: italic; }
+
+/* Approximates Jake's template: 7.5in text width, 11pt Latin Modern. */
+.resume-sheet {
+    width: 7.5in; box-sizing: content-box; padding: .5in .5in .4in; margin-bottom: .35rem;
+    background: #fff; color: #000; border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0, 0, 0, .12);
+    font-family: "Latin Modern Roman", "CMU Serif", "Computer Modern", Georgia, "Times New Roman", serif;
+    font-size: 11pt; line-height: 1.2;
+}
+.resume-sheet .rs-section { font-size: 12pt; font-weight: normal; font-variant: small-caps; margin: 0 0 .35em; padding-bottom: 1px; border-bottom: .5pt solid #000; }
+.resume-sheet .rs-row { display: flex; justify-content: space-between; gap: 1em; margin-left: .15in; }
+.resume-sheet .rs-small { font-size: 10pt; }
+.resume-sheet .rs-bullets { margin: .2em 0 0 .15in; padding-left: 24.2pt; font-size: 10pt; }  /* LaTeX's \leftmarginii: 2.2em at 11pt */
+.resume-sheet .rs-bullets li { margin-bottom: .1em; }

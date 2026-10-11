@@ -24,8 +24,12 @@ class CourseworkInline(admin.TabularInline):
 
 @admin.register(Education)
 class EducationAdmin(admin.ModelAdmin):
-    list_display = ('degree', 'school', 'start_date', 'end_date', 'gpa')
+    list_display = ('degree_display', 'school', 'start_date', 'end_date', 'gpa')
     inlines = [CourseworkInline]
+
+    @admin.display(description='degree', ordering='degree')
+    def degree_display(self, obj):
+        return obj.display_degree
 
 
 class BulletInline(admin.TabularInline):

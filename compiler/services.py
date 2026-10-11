@@ -88,10 +88,15 @@ def fmt_date(d):
 
 
 def date_range(start, end):
-    """Null end means Present (Honor/Certification pass only start, see Component)."""
+    """Null end means Present (Experience/Leadership; see Component)."""
     if start is None:
         return ''
     return f'{fmt_date(start)} -- {fmt_date(end) if end else "Present"}'
+
+
+def date_or_range(start, end):
+    """Projects: just the start date, or a range when an end date is set."""
+    return date_range(start, end) if end else fmt_date(start)
 
 
 def jinja_env():
@@ -106,6 +111,7 @@ def jinja_env():
     env.filters['bullet'] = bullet_markup
     env.filters['date'] = fmt_date
     env.filters['date_range'] = date_range
+    env.filters['date_or_range'] = date_or_range
     return env
 
 

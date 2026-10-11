@@ -1,19 +1,23 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ title }}{% endblock %}
+{% block body_class %}{% if preview %}editor-page{% endif %}{% endblock %}
 
 {% block content %}
 <h1>{{ title }}</h1>
+{% if preview %}<div class="editor">{% endif %}
 <form method="post" class="edit-form">
     {% csrf_token %}
     {{ form.non_field_errors }}
     {% for field in form %}
-    <p>
+    <p data-field="{{ field.name }}">
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
         {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
         {{ field.errors }}
     </p>
+    {% if preview and field.name == "end_date" %}<p id="add-end-date" hidden><a href="#">+ add end date</a></p>{% endif %}
     {% endfor %}
 
     <h2>{{ inline_title }}</h2>
@@ -43,4 +47,11 @@
         {% if delete_url %}&middot; <a class="badge over" href="{{ delete_url }}">Delete</a>{% endif %}
     </p>
 </form>
+{% if preview %}
+<aside class="component-preview">
+    <div id="component-preview" class="resume-sheet"></div>
+</aside>
+</div>
+<script src="{% static 'js/component_preview.js' %}" defer></script>
+{% endif %}
 {% endblock %}

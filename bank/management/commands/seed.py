@@ -55,7 +55,7 @@ COMPONENTS = [
     ),
     (
         Component.Category.PROJECT, 'Trailhead', '', '',
-        date(2025, 2, 1), date(2025, 5, 15), 'React, Node.js, PostgreSQL, Mapbox',
+        date(2025, 2, 1), None, 'React, Node.js, PostgreSQL, Mapbox',
         [
             'Built a hiking-trail planner with **React** and Mapbox that overlays elevation profiles on routes',
             'Designed a PostGIS schema for 12k trails and exposed it through an Express API',
@@ -64,7 +64,7 @@ COMPONENTS = [
     ),
     (
         Component.Category.PROJECT, 'Tiny Shell', '', '',
-        date(2024, 10, 1), date(2024, 11, 20), 'C, POSIX',
+        date(2024, 10, 1), None, 'C, POSIX',
         [
             'Implemented a Unix shell in **C** supporting pipes, redirection, and job control',
             'Handled SIGCHLD and SIGINT correctly to reap background jobs without zombie processes',

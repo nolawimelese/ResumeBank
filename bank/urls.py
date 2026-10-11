@@ -14,4 +14,8 @@ urlpatterns = [
     path('components/<int:pk>/', views.component_edit, name='component_edit'),
     path('components/<int:pk>/delete/', views.component_delete, name='component_delete'),
     path('skills/', views.skills, name='skills'),
+    path('skills/add/', views.skill_add, name='skill_add'),
+    path('skills/move/', views.skill_move, name='skill_move'),
+    path('skills/<int:pk>/rename/', views.skill_rename, name='skill_rename'),
+    path('skills/<int:pk>/delete/', views.skill_delete, name='skill_delete'),
 ]
