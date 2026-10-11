@@ -90,7 +90,7 @@
         return rows;
     }
 
-    // Education block: resumeSubheading {school}{location}{title degree, GPA}{date_range},
+    // Education block: resumeSubheading {school}{GPA}{title degree}{date_range},
     // then a Relevant Coursework item. The PDF shows GPA only with the preset's
     // include_gpa and only the courses a preset picks; here we show all of both.
     function renderEducation() {
@@ -100,8 +100,7 @@
         var titleText = title && title.value ? title.options[title.selectedIndex].text : '';
         var degree = escapeHtml(titleText ? titleText + ' ' + val('degree') : val('degree'));
         var gpa = parseFloat(val('gpa'));
-        if (!isNaN(gpa)) degree += ', GPA: ' + gpa.toFixed(2);
-        html += row('<strong>' + escapeHtml(val('school')) + '</strong>', escapeHtml(val('location')));
+        html += row('<strong>' + escapeHtml(val('school')) + '</strong>', isNaN(gpa) ? '' : '<em class="rs-small">GPA: ' + gpa.toFixed(2) + '</em>');
         html += row('<em>' + degree + '</em>', '<em>' + dateRange(val('start_date'), val('end_date')) + '</em>', 'rs-small');
         var courses = inlineRows('name');
         if (courses.length) {

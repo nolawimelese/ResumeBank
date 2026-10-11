@@ -90,8 +90,8 @@
   \BLOCK{for item in educations }
     \BLOCK{set edu = item.education }
     \resumeSubheading
-      {\VAR{edu.school|latex}}{\VAR{edu.location|latex}}
-      {\VAR{edu.display_degree|latex}\BLOCK{if preset.include_gpa and edu.gpa is not none }, GPA: \VAR{edu.gpa}\BLOCK{endif}}{\VAR{edu.start_date|date_range(edu.end_date)}}
+      {\VAR{edu.school|latex}}{\BLOCK{if preset.include_gpa and edu.gpa is not none }\textit{\small GPA: \VAR{edu.gpa}}\BLOCK{endif}}
+      {\VAR{edu.display_degree|latex}}{\VAR{edu.start_date|date_range(edu.end_date)}}
     \BLOCK{if item.courses }
       \resumeItemListStart
         \resumeItem{\textbf{Relevant Coursework}: \VAR{item.courses|map(attribute='name')|map('latex')|join(', ')}}
