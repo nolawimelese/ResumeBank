@@ -60,12 +60,13 @@
 }
 
 % Like resumeProjectHeading, but packed tighter: honors are one-liners
-% listed back to back under Education.
-\newcommand{\resumeHonorHeading}[2]{
+% listed back to back under Education. #3 is the skip after the heading:
+% -9pt with no bullets, -5pt to give a bullet list its usual gap.
+\newcommand{\resumeHonorHeading}[3]{
     \item
     \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
       \small#1 & #2 \\
-    \end{tabular*}\vspace{-9pt}
+    \end{tabular*}\vspace{#3}
 }
 
 \newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
@@ -104,7 +105,7 @@
   \BLOCK{for item in honors }
     \BLOCK{set c = item.component }
     \resumeHonorHeading
-      {\textbf{\VAR{c.title|latex}}\BLOCK{if c.organization } $|$ \emph{\VAR{c.organization|latex}}\BLOCK{endif}}{\VAR{c.start_date|date}}
+      {\textbf{\VAR{c.title|latex}}\BLOCK{if c.organization } $|$ \emph{\VAR{c.organization|latex}}\BLOCK{endif}}{\VAR{c.start_date|date}}{\BLOCK{if item.bullets }-5pt\BLOCK{else}-9pt\BLOCK{endif}}
     \BLOCK{if item.bullets }
       \resumeItemListStart
       \BLOCK{for b in item.bullets }
@@ -122,6 +123,8 @@
   \resumeSubHeadingListStart
   \BLOCK{for item in section.entries }
     \BLOCK{set c = item.component }
+    \#{ A bullet list leaves extra glue before the next entry; close it up. }
+    \BLOCK{if not loop.first and section.entries[loop.index0 - 1].bullets and section.category not in ('project', 'certification') }\vspace{-10pt}\BLOCK{endif}
     \BLOCK{if section.category == 'project' }
     \resumeProjectHeading
       {\textbf{\VAR{c.title|latex}}\BLOCK{if c.tech_stack } $|$ \emph{\VAR{c.tech_stack|latex}}\BLOCK{endif}}{\VAR{c.start_date|date_or_range(c.end_date)}}
